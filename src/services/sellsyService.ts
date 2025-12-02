@@ -145,26 +145,59 @@ export const searchClients = async (query: string): Promise<SellsyClient[]> => {
     return performSearch();
 };
 
+export const checkConnection = async (): Promise<{ success: boolean; message: string }> => {
+    const config = getConfig();
+    if (!config.sellsy?.clientId) {
+        return { success: false, message: "Client ID manquant" };
+    }
+
+    try {
+        const headers = await getHeaders(config);
+        // Try a simple search to verify connectivity
+        const response = await fetch(getApiUrl('/companies/search'), {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify({
+                filters: {
+                    // Empty filter or simple limit to check access
+                },
+                pagination: {
+                    limit: 1
+                }
+            })
+        });
+
+        if (response.ok) {
+            return { success: true, message: "Connecté à Sellsy" };
+        } else {
+            const text = await response.text();
+            return { success: false, message: `Erreur API: ${response.status} ${text}` };
+        }
+    } catch (error: any) {
+        return { success: false, message: `Erreur: ${error.message || 'Inconnue'}` };
+    }
+};
+
 export const searchItems = async (query: string): Promise<SellsyItem[]> => {
     const config = getConfig();
-
-    // MOCK MODE
-    // MOCK MODE REMOVED
-    if (!config.sellsy?.clientId) {
-        console.warn("Sellsy Client ID missing in config");
-        return [];
-    }
 
     // REAL API CALL
     const performSearch = async (retry = false): Promise<SellsyItem[]> => {
         try {
             const headers = await getHeaders(config, retry);
+
+            // Note: Sellsy API v2 ItemFilters does not support 'name' or 'search'.
+            // We must fetch items and filter client-side.
+            // We request 'product' and 'service' types.
             const response = await fetch(getApiUrl('/items/search'), {
                 method: 'POST',
                 headers: headers,
                 body: JSON.stringify({
                     filters: {
-                        name: query
+                        type: ['product', 'service']
+                    },
+                    pagination: {
+                        limit: 100 // Fetch a reasonable batch
                     }
                 })
             });
@@ -179,13 +212,21 @@ export const searchItems = async (query: string): Promise<SellsyItem[]> => {
             }
 
             const data = await response.json();
-            return (data.data || []).map((item: any) => ({
+            const allItems = (data.data || []).map((item: any) => ({
                 id: item.id,
                 name: item.name,
                 type: item.type,
                 unitAmount: item.sale_price?.amount || '0',
                 unit: item.unit?.label || ''
             }));
+
+            // Client-side filtering
+            if (!query) return allItems;
+            const lowerQuery = query.toLowerCase();
+            return allItems.filter((item: any) =>
+                item.name?.toLowerCase().includes(lowerQuery)
+            );
+
         } catch (error) {
             console.error('Sellsy Items Search Error:', error);
             return [];

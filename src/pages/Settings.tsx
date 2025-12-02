@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Save, RefreshCw, AlertCircle, Settings as SettingsIcon, Users, LayoutTemplate, Coins, CloudLightning, Link as LinkIcon } from 'lucide-react';
 import { GlobalConfig, TypologyPerformance, Phase } from '../types';
 import { DEFAULT_CONFIG, getConfig } from '../services/calculationService';
+import { checkConnection } from '../services/sellsyService';
 import { Input } from '../components/Input';
 import { useToast } from '../components/ui/Toast';
 import { useConfirm } from '../components/ui/ConfirmModal';
@@ -14,6 +15,9 @@ export const Settings = () => {
     const [config, setConfig] = useState<GlobalConfig>(DEFAULT_CONFIG);
     const [isSaved, setIsSaved] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+
+    const [apiStatus, setApiStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+    const [apiMessage, setApiMessage] = useState('');
 
     const [isAdmin, setIsAdmin] = useState(false);
     const toast = useToast();
@@ -84,8 +88,6 @@ export const Settings = () => {
         }));
         setIsSaved(false);
     };
-
-
 
     const handleSellsyChange = (key: string, value: string) => {
         setConfig(prev => ({
@@ -164,6 +166,21 @@ export const Settings = () => {
                 console.error("Error resetting remote config", e);
                 toast.error("Erreur lors de la réinitialisation cloud");
             }
+        }
+    };
+
+    const handleTestConnection = async () => {
+        setApiStatus('loading');
+        setApiMessage('Test en cours...');
+        const result = await checkConnection();
+        if (result.success) {
+            setApiStatus('success');
+            setApiMessage(result.message);
+            toast.success(result.message);
+        } else {
+            setApiStatus('error');
+            setApiMessage(result.message);
+            toast.error(result.message);
         }
     };
 
@@ -335,9 +352,35 @@ export const Settings = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         {/* API Keys */}
                         <div className="space-y-4">
-                            <h4 className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                                <SettingsIcon className="w-4 h-4" /> Clés API
-                            </h4>
+                            <div className="flex items-center justify-between">
+                                <h4 className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                                    <SettingsIcon className="w-4 h-4" /> Clés API
+                                </h4>
+                                <div className="flex items-center gap-2">
+                                    {apiStatus !== 'idle' && (
+                                        <span className={`text-xs font-bold px-2 py-1 rounded-full ${apiStatus === 'success' ? 'bg-green-100 text-green-700' :
+                                                apiStatus === 'error' ? 'bg-red-100 text-red-700' :
+                                                    'bg-blue-100 text-blue-700'
+                                            }`}>
+                                            {apiStatus === 'loading' ? '...' : apiStatus === 'success' ? 'OK' : 'Erreur'}
+                                        </span>
+                                    )}
+                                    <button
+                                        onClick={handleTestConnection}
+                                        disabled={apiStatus === 'loading'}
+                                        className="text-xs bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 px-3 py-1 rounded-lg transition-colors"
+                                    >
+                                        Tester la connexion
+                                    </button>
+                                </div>
+                            </div>
+
+                            {apiStatus === 'error' && (
+                                <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-xs text-red-600 dark:text-red-400">
+                                    {apiMessage}
+                                </div>
+                            )}
+
                             <Input
                                 label="Client ID"
                                 value={config.sellsy?.clientId || ''}
