@@ -10,10 +10,10 @@ export default defineConfig(({ mode }) => {
       host: '0.0.0.0',
       proxy: {
 
-        '/api/sellsy': {
+        '/sellsy-proxy': {
           target: 'https://api.sellsy.com',
           changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/api\/sellsy/, '')
+          rewrite: (path) => path.replace(/^\/sellsy-proxy/, '')
         }
       }
     },
