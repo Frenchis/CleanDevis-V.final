@@ -73,68 +73,80 @@ const getHeaders = async (config: GlobalConfig, forceRefresh = false): Promise<H
 export const searchClients = async (query: string): Promise<SellsyClient[]> => {
     const config = getConfig();
 
-    // MOCK MODE
-    // MOCK MODE REMOVED
-    if (!config.sellsy?.clientId) {
-        console.warn("Sellsy Client ID missing in config");
-        return [];
-    }
-
     // REAL API CALL
     const performSearch = async (retry = false): Promise<SellsyClient[]> => {
         try {
             const headers = await getHeaders(config, retry);
 
-            // Try to use wildcard for partial match if supported by Sellsy API
-            const filterName = query;
+            // Use global search for broader matching (partial search)
+            // The /search endpoint uses 'q' parameter for autocomplete-style search
+            const response = await fetch(getApiUrl(`/search?q=${encodeURIComponent(query)}&limit=100`), {
+                method: 'GET',
+                headers: headers
+            });
 
-            const [companiesRes, individualsRes] = await Promise.all([
-                fetch(getApiUrl('/companies/search?limit=50'), {
-                    method: 'POST',
-                    headers: headers,
-                    body: JSON.stringify({ filters: { name: filterName } })
-                }),
-                fetch(getApiUrl('/individuals/search?limit=50'), {
-                    method: 'POST',
-                    headers: headers,
-                    body: JSON.stringify({ filters: { name: filterName } })
-                })
-            ]);
-
-            // If either is 401, retry both
-            if ((companiesRes.status === 401 || individualsRes.status === 401) && !retry) {
-                console.warn('Sellsy Token expired or invalid. Retrying...');
+            if (response.status === 401 && !retry) {
                 return performSearch(true);
             }
 
-            let companies: SellsyClient[] = [];
-            if (companiesRes.ok) {
-                const data = await companiesRes.json();
-                companies = (data.data || []).map((c: any) => ({
-                    ...c,
-                    name: c.name || c.fullName || c.third?.name || "Nom inconnu",
-                    type: 'corporation'
-                }));
-            } else {
-                console.error('Companies Search Error:', companiesRes.status);
+            if (!response.ok) {
+                console.error('Sellsy Client Search Error:', response.status);
+                return [];
             }
 
-            let individuals: SellsyClient[] = [];
-            if (individualsRes.ok) {
-                const data = await individualsRes.json();
-                individuals = (data.data || []).map((i: any) => ({
-                    id: i.id,
-                    name: `${i.last_name || ''} ${i.first_name || ''}`.trim() || "Nom inconnu",
-                    type: 'person',
-                    email: i.email,
-                    city: i.address?.city,
-                    postalCode: i.address?.postalCode
-                }));
-            } else {
-                console.error('Individuals Search Error:', individualsRes.status);
+            const data = await response.json();
+            const results: SellsyClient[] = [];
+
+            if (data.data && Array.isArray(data.data)) {
+                for (const item of data.data) {
+                    let client: SellsyClient | null = null;
+
+                    // The search result structure in Sellsy v2 usually wraps the object
+                    // item.type tells us what it is
+                    // item.company or item.individual contains the data
+
+                    if (item.type === 'company' && item.company) {
+                        client = {
+                            id: item.company.id,
+                            name: item.company.name,
+                            type: 'corporation',
+                            email: item.company.email,
+                            contactId: item.company.main_contact_id
+                        };
+                    }
+                    else if (item.type === 'individual' && item.individual) {
+                        client = {
+                            id: item.individual.id,
+                            name: `${item.individual.first_name || ''} ${item.individual.last_name || ''}`.trim(),
+                            type: 'person',
+                            email: item.individual.email
+                        };
+                    }
+                    // Fallback for flat structure if API behaves differently
+                    else if (item.type === 'company') {
+                        client = {
+                            id: item.id,
+                            name: item.name,
+                            type: 'corporation',
+                            email: item.email
+                        };
+                    }
+                    else if (item.type === 'individual') {
+                        client = {
+                            id: item.id,
+                            name: `${item.first_name || ''} ${item.last_name || ''}`.trim(),
+                            type: 'person',
+                            email: item.email
+                        };
+                    }
+
+                    if (client) {
+                        results.push(client);
+                    }
+                }
             }
 
-            return [...companies, ...individuals];
+            return results;
 
         } catch (error) {
             console.error('Sellsy Search Error:', error);
@@ -204,15 +216,17 @@ export const searchItems = async (query: string): Promise<SellsyItem[]> => {
             }
 
             const data = await response.json();
-            const allItems = (data.data || []).map((item: any) => ({
-                id: item.id,
-                name: item.name,
-                type: item.type,
-                unitAmount: item.sale_price?.amount || '0',
-                unit: item.unit?.label || ''
-            }));
+            const allItems = (data.data || [])
+                .map((item: any) => ({
+                    id: item.id,
+                    name: item.name,
+                    type: item.type,
+                    unitAmount: item.sale_price?.amount || '0',
+                    unit: item.unit?.label || ''
+                }))
+                .filter((item: any) => item.name && item.name.trim() !== ''); // Filter out items without names
 
-            console.log(`Sellsy Catalog: Fetched ${allItems.length} items from API.`);
+            console.log(`Sellsy Catalog: Fetched ${allItems.length} valid items from API.`);
 
             // Client-side filtering
             if (!query) return allItems;

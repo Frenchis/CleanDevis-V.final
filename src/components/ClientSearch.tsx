@@ -57,7 +57,7 @@ export const ClientSearch = ({ onSelect, initialValue, clearOnSelect = false, la
         <div className="relative">
             <div className="relative">
                 <Input
-                    label={label !== undefined ? label : "Client / Projet"}
+                    label={label !== undefined ? label : "Client"}
                     labelPlacement="outside"
                     value={query}
                     onChange={(e) => {

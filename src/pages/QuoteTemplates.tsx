@@ -761,7 +761,7 @@ export const QuoteTemplates = () => {
                             </div>
 
                             <div>
-                                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Client / Projet</label>
+                                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Client</label>
                                 <ClientSearch
                                     label=""
                                     initialValue=""
