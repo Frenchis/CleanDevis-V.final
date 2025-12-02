@@ -1,0 +1,12 @@
+{
+    "rewrites": [
+        {
+            "source": "/api/sellsy/:path*",
+            "destination": "https://api.sellsy.com/:path*"
+        },
+        {
+            "source": "/(.*)",
+            "destination": "/index.html"
+        }
+    ]
+}
