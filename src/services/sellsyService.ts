@@ -2,9 +2,15 @@ import { ProjectData, SellsyClient, SellsyEstimate, SellsyEstimateLine, GlobalCo
 import { getConfig } from './calculationService';
 import { supabase } from '../lib/supabaseClient';
 
-const SELLSY_API_URL = '/api/sellsy/v2';
-
-
+// Helper to determine API URL based on environment
+const getApiUrl = (endpoint: string) => {
+    // In development (Vite), use the local proxy
+    if (import.meta.env.DEV) {
+        return `/api/sellsy${endpoint}`;
+    }
+    // In production (Vercel), use the serverless proxy function
+    return `/api/proxy?endpoint=${encodeURIComponent(endpoint)}`;
+};
 
 interface SellsyTokenResponse {
     access_token: string;
@@ -20,79 +26,59 @@ const clearToken = () => {
     localStorage.removeItem(`sellsy_token_expiry_${clientId}`);
 };
 
-// Helper to get access token with caching
-const getAccessToken = async (config: GlobalConfig): Promise<string | null> => {
-    const clientId = config.sellsy?.clientId || 'default';
+// Helper to get headers with auth handling
+const getHeaders = async (config: GlobalConfig, forceRefresh = false): Promise<Headers> => {
+    const clientId = config.sellsy?.clientId;
+    const clientSecret = config.sellsy?.clientSecret;
+
+    if (!clientId || !clientSecret) {
+        throw new Error("Missing Sellsy credentials");
+    }
+
     const tokenKey = `sellsy_access_token_${clientId}`;
     const expiryKey = `sellsy_token_expiry_${clientId}`;
 
-    // Check cache
-    const cachedToken = localStorage.getItem(tokenKey);
-    const tokenExpiry = localStorage.getItem(expiryKey);
+    let token = localStorage.getItem(tokenKey);
+    const expiry = localStorage.getItem(expiryKey);
 
-    if (cachedToken && tokenExpiry && Date.now() < parseInt(tokenExpiry)) {
-        return cachedToken;
-    }
+    if (forceRefresh || !token || !expiry || Date.now() > parseInt(expiry)) {
+        try {
+            // Use supabase function for auth
+            const { data, error } = await supabase.functions.invoke('sellsy-auth', {
+                body: { clientId, clientSecret }
+            });
 
-    // Fetch new token via Supabase Edge Function
-    try {
-        console.log('Fetching Sellsy token via Supabase Edge Function...');
-        const { data, error } = await supabase.functions.invoke('sellsy-auth', {
-            method: 'POST',
-        });
+            if (error || !data?.access_token) {
+                console.error('Sellsy Auth Error:', error || data);
+                throw new Error("Failed to authenticate with Sellsy");
+            }
 
-        if (error) {
-            console.error('Supabase Function Error:', error);
-            // Fallback for local dev if function is not running? 
-            // No, we want to enforce security. But if config has keys, maybe we can warn?
-            // For now, let's assume the function is the way to go.
-            return null;
+            token = data.access_token;
+            localStorage.setItem(tokenKey, token!);
+            localStorage.setItem(expiryKey, (Date.now() + (data.expires_in * 1000)).toString());
+        } catch (err) {
+            console.error('Auth Exception:', err);
+            throw err;
         }
-
-        if (!data || !data.access_token) {
-            console.error('No access token returned from Edge Function', data);
-            return null;
-        }
-
-        // Cache token (expires_in is in seconds, remove 60s for safety buffer)
-        const expiryTime = Date.now() + (data.expires_in - 60) * 1000;
-        localStorage.setItem(tokenKey, data.access_token);
-        localStorage.setItem(expiryKey, expiryTime.toString());
-
-        return data.access_token;
-    } catch (error) {
-        console.error('Sellsy Auth Network Error:', error);
-        return null;
-    }
-};
-
-// Helper to get headers
-const getHeaders = async (config: GlobalConfig, forceRefresh = false) => {
-    if (forceRefresh) clearToken();
-    const token = await getAccessToken(config);
-
-    if (!token) {
-        throw new Error("Impossible de s'authentifier auprès de Sellsy. Vérifiez vos identifiants.");
     }
 
-    return {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-    };
+    const headers = new Headers();
+    headers.append('Authorization', `Bearer ${token}`);
+    headers.append('Content-Type', 'application/json');
+    headers.append('Accept', 'application/json');
+
+    return headers;
 };
 
 export const searchClients = async (query: string): Promise<SellsyClient[]> => {
     const config = getConfig();
 
-    // MOCK MODE if no keys configured
+    // MOCK MODE
     if (!config.sellsy?.clientId) {
-        console.log('[Sellsy Mock] Searching clients for:', query);
-        await new Promise(r => setTimeout(r, 800)); // Simulate network delay
-
+        await new Promise(r => setTimeout(r, 500));
         return [
-            { id: '1', name: 'Acme Corp', type: 'corporation' as const, city: 'Paris', email: 'contact@acme.com' },
-            { id: '2', name: 'John Doe', type: 'person' as const, city: 'Lyon', email: 'john@doe.com' },
-            { id: '3', name: 'Syndic Résidence Les Lilas', type: 'corporation' as const, city: 'Nantes', email: 'syndic@lilas.fr' }
+            { id: '1', name: 'Client Test 1', type: 'corporation' as const, city: 'Paris' },
+            { id: '2', name: 'Client Test 2', type: 'person' as const, city: 'Lyon' }
         ].filter(c => c.name.toLowerCase().includes(query.toLowerCase()));
     }
 
@@ -101,18 +87,16 @@ export const searchClients = async (query: string): Promise<SellsyClient[]> => {
         try {
             const headers = await getHeaders(config, retry);
 
-            // Try to use wildcard for partial match if supported by Sellsy API (undocumented but common)
-            // If not supported, it might fail or return exact match only.
-            // Reverting to 'name' key is the priority.
+            // Try to use wildcard for partial match if supported by Sellsy API
             const filterName = query;
 
             const [companiesRes, individualsRes] = await Promise.all([
-                fetch(`${SELLSY_API_URL}/companies/search`, {
+                fetch(getApiUrl('/companies/search'), {
                     method: 'POST',
                     headers: headers,
                     body: JSON.stringify({ filters: { name: filterName } })
                 }),
-                fetch(`${SELLSY_API_URL}/individuals/search`, {
+                fetch(getApiUrl('/individuals/search'), {
                     method: 'POST',
                     headers: headers,
                     body: JSON.stringify({ filters: { name: filterName } })
@@ -180,7 +164,7 @@ export const searchItems = async (query: string): Promise<SellsyItem[]> => {
     const performSearch = async (retry = false): Promise<SellsyItem[]> => {
         try {
             const headers = await getHeaders(config, retry);
-            const response = await fetch(`${SELLSY_API_URL}/items/search`, {
+            const response = await fetch(getApiUrl('/items/search'), {
                 method: 'POST',
                 headers: headers,
                 body: JSON.stringify({
@@ -233,7 +217,7 @@ export const createOpportunity = async (project: ProjectData, clientId: string):
 const getTaxes = async (config: GlobalConfig): Promise<{ id: number; rate: number; label: string }[]> => {
     try {
         const headers = await getHeaders(config);
-        const response = await fetch(`${SELLSY_API_URL}/taxes`, {
+        const response = await fetch(getApiUrl('/taxes'), {
             method: 'GET',
             headers: headers
         });
@@ -256,11 +240,9 @@ const getTaxes = async (config: GlobalConfig): Promise<{ id: number; rate: numbe
 };
 
 const getTaxId = async (config: GlobalConfig, rate: number): Promise<number> => {
-    // Default to a known ID if possible, or fetch
-    // For now, let's fetch and cache in memory or just fetch
     const taxes = await getTaxes(config);
     const tax = taxes.find(t => Math.abs(t.rate - rate) < 0.1);
-    return tax ? tax.id : 0; // 0 or throw error? Sellsy might require a valid ID.
+    return tax ? tax.id : 0;
 };
 
 const getPhaseDescription = (phase: string, nbLogements: number): string => {
@@ -389,7 +371,7 @@ export const createEstimate = async (project: ProjectData, clientId: string): Pr
             const headers = await getHeaders(config, retry);
             console.log('Sending Sellsy Payload:', JSON.stringify(estimate, null, 2));
 
-            const response = await fetch(`${SELLSY_API_URL}/estimates`, {
+            const response = await fetch(getApiUrl('/estimates'), {
                 method: 'POST',
                 headers: headers,
                 body: JSON.stringify(estimate)
@@ -501,7 +483,7 @@ export const createEstimateFromTemplate = async (
 
             console.log("Sending payload to Sellsy:", JSON.stringify(payload, null, 2));
 
-            const response = await fetch(`${SELLSY_API_URL}/estimates`, {
+            const response = await fetch(getApiUrl('/estimates'), {
                 method: 'POST',
                 headers: headers,
                 body: JSON.stringify(payload)
@@ -529,4 +511,3 @@ export const createEstimateFromTemplate = async (
 
     return performCreate();
 };
-

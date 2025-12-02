@@ -13,9 +13,13 @@ export default async function handler(req, res) {
         return res.status(200).end();
     }
 
-    const { path } = req.query;
-    const urlPath = Array.isArray(path) ? path.join('/') : path;
-    const targetUrl = `https://api.sellsy.com/${urlPath}`;
+    const { endpoint } = req.query;
+
+    if (!endpoint) {
+        return res.status(400).json({ error: 'Missing endpoint parameter' });
+    }
+
+    const targetUrl = `https://api.sellsy.com/v2${endpoint}`;
 
     try {
         const response = await fetch(targetUrl, {
