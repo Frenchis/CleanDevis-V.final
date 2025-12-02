@@ -65,6 +65,13 @@ export const Settings = () => {
         loadSettings();
     }, []);
 
+    // Auto-check connection when config is loaded and clientId exists
+    useEffect(() => {
+        if (config.sellsy?.clientId && apiStatus === 'idle') {
+            handleTestConnection();
+        }
+    }, [config.sellsy?.clientId]);
+
     const handleChange = (key: string, value: number, section?: 'productivity') => {
         setConfig(prev => {
             if (section === 'productivity') {
@@ -359,8 +366,8 @@ export const Settings = () => {
                                 <div className="flex items-center gap-2">
                                     {apiStatus !== 'idle' && (
                                         <span className={`text-xs font-bold px-2 py-1 rounded-full ${apiStatus === 'success' ? 'bg-green-100 text-green-700' :
-                                                apiStatus === 'error' ? 'bg-red-100 text-red-700' :
-                                                    'bg-blue-100 text-blue-700'
+                                            apiStatus === 'error' ? 'bg-red-100 text-red-700' :
+                                                'bg-blue-100 text-blue-700'
                                             }`}>
                                             {apiStatus === 'loading' ? '...' : apiStatus === 'success' ? 'OK' : 'Erreur'}
                                         </span>

@@ -188,14 +188,12 @@ export const searchItems = async (query: string): Promise<SellsyItem[]> => {
 
             // Note: Sellsy API v2 ItemFilters does not support 'name' or 'search'.
             // We must fetch items and filter client-side.
-            // We request 'product' and 'service' types.
+            // We use empty filters to get ALL types (products, services, etc.)
             const response = await fetch(getApiUrl('/items/search'), {
                 method: 'POST',
                 headers: headers,
                 body: JSON.stringify({
-                    filters: {
-                        type: ['product', 'service']
-                    },
+                    filters: {},
                     pagination: {
                         limit: 100 // Fetch a reasonable batch
                     }
@@ -220,12 +218,16 @@ export const searchItems = async (query: string): Promise<SellsyItem[]> => {
                 unit: item.unit?.label || ''
             }));
 
+            console.log(`Sellsy Catalog: Fetched ${allItems.length} items from API.`);
+
             // Client-side filtering
             if (!query) return allItems;
             const lowerQuery = query.toLowerCase();
-            return allItems.filter((item: any) =>
+            const filtered = allItems.filter((item: any) =>
                 item.name?.toLowerCase().includes(lowerQuery)
             );
+            console.log(`Sellsy Catalog: Filtered to ${filtered.length} items for query "${query}".`);
+            return filtered;
 
         } catch (error) {
             console.error('Sellsy Items Search Error:', error);
