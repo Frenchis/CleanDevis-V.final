@@ -106,40 +106,25 @@ export const searchClients = async (query: string): Promise<SellsyClient[]> => {
                     // console.log('Processing item:', item); // DEBUG LOG
                     let client: SellsyClient | null = null;
 
-                    // The search result structure in Sellsy v2 usually wraps the object
-                    // item.type tells us what it is
-                    // item.company or item.individual contains the data
+                    // The search result structure in Sellsy v2:
+                    // item.object.type tells us what it is ('company', 'individual', etc.)
+                    // The properties (name, email, etc.) are at the top level of the item.
 
-                    if (item.type === 'company' && item.company) {
+                    const type = item.object?.type;
+
+                    if (type === 'company') {
                         client = {
-                            id: item.company.id,
-                            name: item.company.name,
+                            id: item.object.id,
+                            name: item.name || "Nom inconnu",
                             type: 'corporation',
-                            email: item.company.email,
-                            contactId: item.company.main_contact_id
+                            email: item.email,
+                            contactId: item.main_contact_id
                         };
                     }
-                    else if (item.type === 'individual' && item.individual) {
+                    else if (type === 'individual') {
                         client = {
-                            id: item.individual.id,
-                            name: `${item.individual.first_name || ''} ${item.individual.last_name || ''}`.trim(),
-                            type: 'person',
-                            email: item.individual.email
-                        };
-                    }
-                    // Fallback for flat structure if API behaves differently
-                    else if (item.type === 'company') {
-                        client = {
-                            id: item.id,
-                            name: item.name,
-                            type: 'corporation',
-                            email: item.email
-                        };
-                    }
-                    else if (item.type === 'individual') {
-                        client = {
-                            id: item.id,
-                            name: `${item.first_name || ''} ${item.last_name || ''}`.trim(),
+                            id: item.object.id,
+                            name: `${item.first_name || ''} ${item.last_name || ''}`.trim() || item.name || "Nom inconnu",
                             type: 'person',
                             email: item.email
                         };
