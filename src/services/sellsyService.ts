@@ -312,14 +312,8 @@ export const createEstimate = async (project: ProjectData, clientId: string): Pr
         try {
             const lines: SellsyEstimateLine[] = [];
 
-            // Add Subject as the first line (Comment) if it exists
-            if (project.subject) {
-                lines.push({
-                    type: 'comment',
-                    text: project.subject // Keep HTML here for rich text display
-                });
-                lines.push({ type: 'break-line' }); // Add spacing
-            }
+            // Subject is no longer added as a line item
+            // if (project.subject) { ... }
 
             const { calculateBreakdown, getStandardPhases } = await import('./calculationService');
             const activePhases = getStandardPhases(project.nbPhases);
@@ -468,14 +462,8 @@ export const createEstimateFromTemplate = async (
             // Prepare rows
             const rows: any[] = [];
 
-            // Add Subject as the first line (Comment) if it exists
-            if (subject) {
-                rows.push({
-                    type: 'comment',
-                    text: subject // Keep HTML here
-                });
-                rows.push({ type: 'break-line' });
-            }
+            // Subject is no longer added as a line item
+            // if (subject) { ... }
 
             // Map template items to Sellsy row format
             items.forEach(item => {
