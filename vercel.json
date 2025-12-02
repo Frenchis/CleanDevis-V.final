@@ -1,10 +1,6 @@
 {
     "rewrites": [
         {
-            "source": "/sellsy-proxy/v2/:path*",
-            "destination": "https://api.sellsy.com/v2/:path*"
-        },
-        {
             "source": "/(.*)",
             "destination": "/index.html"
         }

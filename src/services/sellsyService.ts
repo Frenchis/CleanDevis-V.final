@@ -2,7 +2,7 @@ import { ProjectData, SellsyClient, SellsyEstimate, SellsyEstimateLine, GlobalCo
 import { getConfig } from './calculationService';
 import { supabase } from '../lib/supabaseClient';
 
-const SELLSY_API_URL = '/sellsy-proxy/v2';
+const SELLSY_API_URL = '/api/sellsy/v2';
 
 
 
