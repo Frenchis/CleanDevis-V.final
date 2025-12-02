@@ -46,18 +46,6 @@ const SPECIAL_ITEMS: Product[] = [
     { id: 's3', name: 'Sous-Total', category: 'special', price: 0, unit: '', type: 'sub-total' },
 ];
 
-const MOCK_CATALOG: Product[] = [
-    { id: '1', name: 'Nettoyage Vitrerie', category: 'service', price: 45, unit: 'h', type: 'product' },
-    { id: '2', name: 'Remise en état', category: 'service', price: 55, unit: 'h', type: 'product' },
-    { id: '3', name: 'Shampoing Moquette', category: 'service', price: 12, unit: 'm²', type: 'product' },
-    { id: '4', name: 'Décapage Sols', category: 'service', price: 8, unit: 'm²', type: 'product' },
-    { id: '5', name: 'Kit Hygiène', category: 'supply', price: 15, unit: 'u', type: 'product' },
-    { id: '6', name: 'Sac Poubelle 100L', category: 'supply', price: 25, unit: 'carton', type: 'product' },
-    { id: '7', name: 'Produit Multi-surfaces', category: 'supply', price: 12, unit: 'L', type: 'product' },
-    { id: '8', name: 'Location Monobrosse', category: 'equipment', price: 80, unit: 'j', type: 'product' },
-    { id: '9', name: 'Location Injecteur/Extracteur', category: 'equipment', price: 95, unit: 'j', type: 'product' },
-];
-
 interface TemplateItem extends Product {
     quantity: number;
     text?: string;
@@ -357,16 +345,11 @@ const BuilderDroppable = ({
     );
 };
 
-// --- Main Component ---
-
 import { useToast } from '@/components/ui/Toast';
 import { useConfirm } from '@/components/ui/ConfirmModal';
 import { RichTextTextarea } from '@/components/ui/RichTextTextarea';
 
-// ... (rest of imports)
-
 export const QuoteTemplates = () => {
-    // ... (state declarations)
     const [searchQuery, setSearchQuery] = useState('');
     const [templateItems, setTemplateItems] = useState<TemplateItem[]>([]);
     const [templateName, setTemplateName] = useState('Nouveau Modèle');
@@ -396,7 +379,6 @@ export const QuoteTemplates = () => {
         })
     );
 
-    // ... (useEffect hooks remain same)
     // Load from Supabase on mount
     useEffect(() => {
         const fetchTemplates = async () => {
@@ -444,12 +426,7 @@ export const QuoteTemplates = () => {
         return () => clearTimeout(timeoutId);
     }, [searchQuery]);
 
-    // Combine Mock and Sellsy catalogs
-    const filteredMockCatalog = MOCK_CATALOG.filter(p =>
-        p.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-
-    const displayCatalog = [...filteredMockCatalog, ...sellsyCatalog];
+    const displayCatalog = sellsyCatalog;
 
     // -- Logic --
     const addItem = (product: Product, index?: number) => {

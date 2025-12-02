@@ -74,12 +74,10 @@ export const searchClients = async (query: string): Promise<SellsyClient[]> => {
     const config = getConfig();
 
     // MOCK MODE
+    // MOCK MODE REMOVED
     if (!config.sellsy?.clientId) {
-        await new Promise(r => setTimeout(r, 500));
-        return [
-            { id: '1', name: 'Client Test 1', type: 'corporation' as const, city: 'Paris' },
-            { id: '2', name: 'Client Test 2', type: 'person' as const, city: 'Lyon' }
-        ].filter(c => c.name.toLowerCase().includes(query.toLowerCase()));
+        console.warn("Sellsy Client ID missing in config");
+        return [];
     }
 
     // REAL API CALL
@@ -151,13 +149,10 @@ export const searchItems = async (query: string): Promise<SellsyItem[]> => {
     const config = getConfig();
 
     // MOCK MODE
+    // MOCK MODE REMOVED
     if (!config.sellsy?.clientId) {
-        await new Promise(r => setTimeout(r, 500));
-        return [
-            { id: '1', name: 'Prestation de nettoyage', type: 'service' as const, unitAmount: '50.00', unit: 'h' },
-            { id: '2', name: 'Produit détergent', type: 'product' as const, unitAmount: '15.00', unit: 'L' },
-            { id: '3', name: 'Location nacelle', type: 'service' as const, unitAmount: '250.00', unit: 'j' }
-        ].filter(i => i.name.toLowerCase().includes(query.toLowerCase()));
+        console.warn("Sellsy Client ID missing in config");
+        return [];
     }
 
     // REAL API CALL
@@ -204,9 +199,8 @@ export const createOpportunity = async (project: ProjectData, clientId: string):
     const config = getConfig();
 
     if (!config.sellsy?.clientId) {
-        console.log('[Sellsy Mock] Creating Opportunity:', { project, clientId });
-        await new Promise(r => setTimeout(r, 1000));
-        return 'opp_mock_12345';
+        console.warn("Sellsy Client ID missing in config");
+        return null;
     }
 
     // Real implementation would go here
@@ -362,9 +356,8 @@ export const createEstimate = async (project: ProjectData, clientId: string): Pr
             };
 
             if (!config.sellsy?.clientId) {
-                console.log('[Sellsy Mock] Creating Estimate:', JSON.stringify(estimate, null, 2));
-                await new Promise(r => setTimeout(r, 1500));
-                return { id: 98765, publicLink: 'https://mock.sellsy.com/estimate/98765' };
+                console.warn("Sellsy Client ID missing in config");
+                throw new Error("Sellsy configuration missing");
             }
 
             // Real API Call
