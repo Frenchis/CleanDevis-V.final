@@ -1,0 +1,117 @@
+.checkboxContainer {
+  display: flex;
+  gap: 20px;
+  /* padding: 10px; Removed padding to fit better in the list item */
+  /* background: #f8fafc; Removed background to blend with list item */
+  /* border-radius: 12px; */
+  /* box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -2px rgba(0, 0, 0, 0.05); */
+}
+
+.iosCheckbox {
+  --checkbox-size: 24px; /* Slightly smaller to fit the list */
+  --checkbox-color: #3b82f6;
+  --checkbox-bg: #dbeafe;
+  --checkbox-border: #93c5fd;
+
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.iosCheckbox input {
+  display: none;
+}
+
+.checkboxWrapper {
+  position: relative;
+  width: var(--checkbox-size);
+  height: var(--checkbox-size);
+  border-radius: 8px;
+  transition: transform 0.2s ease;
+}
+
+.checkboxBg {
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  border: 2px solid var(--checkbox-border);
+  background: white;
+  transition: all 0.2s ease;
+}
+
+.checkboxIcon {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 80%;
+  height: 80%;
+  color: white;
+  transform: scale(0);
+  transition: all 0.2s ease;
+}
+
+.checkPath {
+  stroke-dasharray: 40;
+  stroke-dashoffset: 40;
+  transition: stroke-dashoffset 0.3s ease 0.1s;
+}
+
+/* Checked State */
+.iosCheckbox input:checked + .checkboxWrapper .checkboxBg {
+  background: var(--checkbox-color);
+  border-color: var(--checkbox-color);
+}
+
+.iosCheckbox input:checked + .checkboxWrapper .checkboxIcon {
+  transform: scale(1);
+}
+
+.iosCheckbox input:checked + .checkboxWrapper .checkPath {
+  stroke-dashoffset: 0;
+}
+
+/* Hover Effects */
+.iosCheckbox:hover .checkboxWrapper {
+  transform: scale(1.05);
+}
+
+/* Active Animation */
+.iosCheckbox:active .checkboxWrapper {
+  transform: scale(0.95);
+}
+
+/* Focus Styles */
+.iosCheckbox input:focus + .checkboxWrapper .checkboxBg {
+  box-shadow: 0 0 0 4px var(--checkbox-bg);
+}
+
+.iosCheckbox.red {
+  --checkbox-color: #ef4444;
+  --checkbox-bg: #fee2e2;
+  --checkbox-border: #fca5a5;
+}
+
+.iosCheckbox.green {
+  --checkbox-color: #4D9805;
+  --checkbox-bg: #dcfce7;
+  --checkbox-border: #86efac;
+}
+
+/* Animation */
+@keyframes bounce {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.iosCheckbox input:checked + .checkboxWrapper {
+  animation: bounce 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
