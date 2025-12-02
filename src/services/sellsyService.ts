@@ -89,12 +89,12 @@ export const searchClients = async (query: string): Promise<SellsyClient[]> => {
             const filterName = query;
 
             const [companiesRes, individualsRes] = await Promise.all([
-                fetch(getApiUrl('/companies/search'), {
+                fetch(getApiUrl('/companies/search?limit=50'), {
                     method: 'POST',
                     headers: headers,
                     body: JSON.stringify({ filters: { name: filterName } })
                 }),
-                fetch(getApiUrl('/individuals/search'), {
+                fetch(getApiUrl('/individuals/search?limit=50'), {
                     method: 'POST',
                     headers: headers,
                     body: JSON.stringify({ filters: { name: filterName } })
@@ -154,16 +154,12 @@ export const checkConnection = async (): Promise<{ success: boolean; message: st
     try {
         const headers = await getHeaders(config);
         // Try a simple search to verify connectivity
-        const response = await fetch(getApiUrl('/companies/search'), {
+        // Pagination must be in query params, not body
+        const response = await fetch(getApiUrl('/companies/search?limit=1'), {
             method: 'POST',
             headers: headers,
             body: JSON.stringify({
-                filters: {
-                    // Empty filter or simple limit to check access
-                },
-                pagination: {
-                    limit: 1
-                }
+                filters: {}
             })
         });
 
@@ -189,14 +185,12 @@ export const searchItems = async (query: string): Promise<SellsyItem[]> => {
             // Note: Sellsy API v2 ItemFilters does not support 'name' or 'search'.
             // We must fetch items and filter client-side.
             // We use empty filters to get ALL types (products, services, etc.)
-            const response = await fetch(getApiUrl('/items/search'), {
+            // Pagination must be in query params
+            const response = await fetch(getApiUrl('/items/search?limit=100'), {
                 method: 'POST',
                 headers: headers,
                 body: JSON.stringify({
-                    filters: {},
-                    pagination: {
-                        limit: 100 // Fetch a reasonable batch
-                    }
+                    filters: {}
                 })
             });
 
