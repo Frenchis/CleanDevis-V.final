@@ -91,14 +91,19 @@ export const searchClients = async (query: string): Promise<SellsyClient[]> => {
 
             if (!response.ok) {
                 console.error('Sellsy Client Search Error:', response.status);
+                const text = await response.text();
+                console.error('Sellsy Client Search Response:', text);
                 return [];
             }
 
             const data = await response.json();
+            console.log('Sellsy Client Search Raw Data:', data); // DEBUG LOG
+
             const results: SellsyClient[] = [];
 
             if (data.data && Array.isArray(data.data)) {
                 for (const item of data.data) {
+                    // console.log('Processing item:', item); // DEBUG LOG
                     let client: SellsyClient | null = null;
 
                     // The search result structure in Sellsy v2 usually wraps the object
@@ -146,6 +151,7 @@ export const searchClients = async (query: string): Promise<SellsyClient[]> => {
                 }
             }
 
+            console.log('Sellsy Client Search Processed Results:', results); // DEBUG LOG
             return results;
 
         } catch (error) {
