@@ -1,4 +1,9 @@
 export default async function handler(req, res) {
+    // Handle CORS Preflight
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+
     const { path } = req.query;
     const urlPath = Array.isArray(path) ? path.join('/') : path;
     const targetUrl = `https://api.sellsy.com/${urlPath}`;
