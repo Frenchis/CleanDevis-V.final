@@ -538,32 +538,44 @@ export const Devis = () => {
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            {/* Surface Area Input */}
-            <div className="col-span-2 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-700 flex flex-col items-center">
-              <label className="text-[10px] font-bold text-slate-400 uppercase mb-1">Surface (m²)</label>
-              <input
-                type="number"
-                min="0"
-                value={surfaceArea || ''}
-                placeholder="0"
-                onChange={(e) => setSurfaceArea(parseInt(e.target.value) || 0)}
-                className="w-full bg-transparent text-2xl font-bold text-slate-900 dark:text-white text-center outline-none"
-              />
-            </div>
-
             {Object.keys(DEFAULT_TYPOLOGIES).map((key) => (
-              <div key={key} className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-700 flex flex-col items-center">
+              <div key={key} className={`bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border flex flex-col items-center transition-all ${surfaceArea > 0 ? 'opacity-50 grayscale' : 'border-slate-100 dark:border-slate-700'}`}>
                 <label className="text-[10px] font-bold text-slate-400 uppercase mb-1">{key}</label>
                 <input
                   type="number"
                   min="0"
                   value={typologies[key as keyof TypologyCount] || ''}
                   placeholder="0"
+                  disabled={surfaceArea > 0}
                   onChange={(e) => handleTypologyChange(key as keyof TypologyCount, parseInt(e.target.value) || 0)}
-                  className="w-full bg-transparent text-2xl font-bold text-slate-900 dark:text-white text-center outline-none"
+                  className="w-full bg-transparent text-2xl font-bold text-slate-900 dark:text-white text-center outline-none disabled:cursor-not-allowed"
                 />
               </div>
             ))}
+
+            {/* Separator */}
+            <div className="col-span-2 flex items-center gap-4 py-2">
+              <div className="h-px flex-grow bg-slate-200 dark:bg-slate-700"></div>
+              <span className="text-xs font-bold text-slate-400 uppercase">OU PAR SURFACE</span>
+              <div className="h-px flex-grow bg-slate-200 dark:bg-slate-700"></div>
+            </div>
+
+            {/* Surface Area Input */}
+            <div className={`col-span-2 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border flex flex-col items-center transition-all ${totalLogements > 0 ? 'opacity-50 grayscale' : 'border-brand-blue/30 bg-brand-blue/5'}`}>
+              <label className="text-[10px] font-bold text-brand-blue uppercase mb-1">Surface Globale (m²)</label>
+              <input
+                type="number"
+                min="0"
+                value={surfaceArea || ''}
+                placeholder="0"
+                disabled={totalLogements > 0}
+                onChange={(e) => setSurfaceArea(parseInt(e.target.value) || 0)}
+                className="w-full bg-transparent text-2xl font-bold text-brand-blue text-center outline-none disabled:cursor-not-allowed"
+              />
+              {totalLogements > 0 && (
+                <span className="text-[10px] text-red-400 mt-1">Désactivé car des typologies sont définies</span>
+              )}
+            </div>
           </div>
         </div>
 
