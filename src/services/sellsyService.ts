@@ -281,8 +281,10 @@ const getTaxId = async (config: GlobalConfig, rate: number): Promise<number> => 
     return tax ? tax.id : 0;
 };
 
-const getPhaseDescription = (phase: string, nbLogements: number): string => {
-    const header = `[${nbLogements} Appartements ] :`;
+const getPhaseDescription = (phase: string, nbLogements: number, surfaceArea?: number): string => {
+    const header = (surfaceArea && surfaceArea > 0)
+        ? `[Projet de ${surfaceArea}m²] :`
+        : `[${nbLogements} Appartements ] :`;
 
     switch (phase) {
         case 'OPR':
@@ -337,7 +339,7 @@ export const createEstimate = async (project: ProjectData, clientId: string): Pr
                 // Add Comment Line for Phase Description
                 lines.push({
                     type: 'comment',
-                    text: getPhaseDescription(phaseName, project.nbLogements)
+                    text: getPhaseDescription(phaseName, project.nbLogements, project.surfaceArea)
                 });
 
                 const productCode = config.sellsy?.productMapping?.[phaseName as Phase] || 'GENERIC_SERVICE';

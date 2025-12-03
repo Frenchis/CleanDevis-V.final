@@ -28,6 +28,7 @@ export const Devis = () => {
   // -- State --
   // We now maintain local state for typologies and phases to allow standalone usage
   const [typologies, setTypologies] = useState<TypologyCount>(DEFAULT_TYPOLOGIES);
+  const [surfaceArea, setSurfaceArea] = useState<number>(0);
   const [activePhases, setActivePhases] = useState<string[]>([]); // Default for standalone
   const [targetPrice, setTargetPrice] = useState<number>(0);
   const [breakdown, setBreakdown] = useState<BreakdownItem[]>([]);
@@ -214,6 +215,7 @@ export const Devis = () => {
     })) {
       setTargetPrice(0);
       setTypologies(DEFAULT_TYPOLOGIES);
+      setSurfaceArea(0);
       setActivePhases([]);
       setBreakdown([]);
       setCalculatedTotal(0);
@@ -245,14 +247,20 @@ export const Devis = () => {
 
     const updatedProjectData: ProjectData = {
       ...projectData,
-      id: targetId, // Ensure ID is consistent
+      id: targetId,
       name: projectName,
       subject: subject || projectName,
-      typologies,
+      typologies: typologies,
+      surfaceArea: surfaceArea,
+      activePhases: activePhases,
+      complexity: projectData.complexity,
       selectedSolution: {
         ...projectData.selectedSolution!,
         priceFinal: calculatedTotal
-      }
+      },
+      nbLogements: totalLogements,
+      surfaceTotal: projectData.surfaceTotal,
+      nbPhases: activePhases.length
     };
 
     try {
@@ -447,6 +455,7 @@ export const Devis = () => {
                         surfaceTotal: 0,
                         nbPhases: 0,
                         typologies: DEFAULT_TYPOLOGIES,
+                        activePhases: [],
                         complexity: { distance: 0, finition: 0, accessibilite: 0, etat: 0 },
                         selectedSolution: null
                       };
@@ -529,6 +538,19 @@ export const Devis = () => {
           </div>
 
           <div className="grid grid-cols-2 gap-3">
+            {/* Surface Area Input */}
+            <div className="col-span-2 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-700 flex flex-col items-center">
+              <label className="text-[10px] font-bold text-slate-400 uppercase mb-1">Surface (m²)</label>
+              <input
+                type="number"
+                min="0"
+                value={surfaceArea || ''}
+                placeholder="0"
+                onChange={(e) => setSurfaceArea(parseInt(e.target.value) || 0)}
+                className="w-full bg-transparent text-2xl font-bold text-slate-900 dark:text-white text-center outline-none"
+              />
+            </div>
+
             {Object.keys(DEFAULT_TYPOLOGIES).map((key) => (
               <div key={key} className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-700 flex flex-col items-center">
                 <label className="text-[10px] font-bold text-slate-400 uppercase mb-1">{key}</label>

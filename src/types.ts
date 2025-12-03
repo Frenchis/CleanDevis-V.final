@@ -65,6 +65,8 @@ export interface ProjectData {
   surfaceTotal: number;
   nbPhases: number;
   typologies: TypologyCount;
+  surfaceArea?: number; // Optional surface area
+  activePhases: string[];
   complexity: ComplexityParams;
   selectedSolution: Solution | null;
 }
