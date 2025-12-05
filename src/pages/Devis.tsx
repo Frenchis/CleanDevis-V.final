@@ -81,8 +81,12 @@ export const Devis = () => {
         setTargetPrice(Math.round(proj.selectedSolution.priceFinal));
       }
 
-      const stdPhases = getStandardPhases(proj.nbPhases);
-      setActivePhases(stdPhases);
+      if (proj.activePhases && proj.activePhases.length > 0) {
+        setActivePhases(proj.activePhases);
+      } else {
+        const stdPhases = getStandardPhases(proj.nbPhases);
+        setActivePhases(stdPhases);
+      }
     } else {
       // Try to load from localStorage
       const savedData = localStorage.getItem('devis_data');
