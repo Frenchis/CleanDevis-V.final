@@ -609,7 +609,7 @@ export const Devis = () => {
                   <div className="flex items-center gap-3">
                     <span className="text-slate-700 dark:text-slate-200 font-medium">{phase}</span>
                     {count > 0 && (
-                      <span className="text-xs font-bold bg-brand-blue/10 text-brand-blue px-2 py-0.5 rounded-full">
+                      <span className="text-xs font-bold bg-blue-600 text-white px-2 py-0.5 rounded-full shadow-sm">
                         x{count}
                       </span>
                     )}
