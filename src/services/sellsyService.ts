@@ -344,9 +344,11 @@ export const createEstimate = async (project: ProjectData, clientId: string): Pr
 
                 const productCode = config.sellsy?.productMapping?.[phaseName as Phase] || 'GENERIC_SERVICE';
 
+                let hasTypologies = false;
                 Object.entries(phaseItem.typologies).forEach(([type, price]) => {
                     const count = project.typologies[type as keyof typeof project.typologies] || 0;
                     if (count > 0) {
+                        hasTypologies = true;
                         lines.push({
                             type: 'single',
                             reference: productCode,
@@ -357,6 +359,18 @@ export const createEstimate = async (project: ProjectData, clientId: string): Pr
                         });
                     }
                 });
+
+                // FALLBACK: If no typologies were added (Global Surface Mode), add a single line for the phase
+                if (!hasTypologies) {
+                    lines.push({
+                        type: 'single',
+                        reference: productCode,
+                        description: `${phaseName} - Forfait Global`,
+                        quantity: "1",
+                        unit_amount: phaseItem.totalPhase.toFixed(2),
+                        tax_id: taxId
+                    });
+                }
 
                 // Add Sub-Total for Phase
                 lines.push({
