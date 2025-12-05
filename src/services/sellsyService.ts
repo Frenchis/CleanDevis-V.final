@@ -283,8 +283,8 @@ const getTaxId = async (config: GlobalConfig, rate: number): Promise<number> => 
 
 const getPhaseDescription = (phase: string, nbLogements: number, surfaceArea?: number): string => {
     const header = (surfaceArea && surfaceArea > 0)
-        ? `[Projet de ${surfaceArea}m²] :`
-        : `[${nbLogements} Appartements ] :`;
+        ? `[ Projet de ${surfaceArea} m² ] :`
+        : `[ ${nbLogements} Appartements ] :`;
 
     switch (phase) {
         case 'OPR':
