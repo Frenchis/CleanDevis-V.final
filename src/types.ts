@@ -72,6 +72,7 @@ export interface ProjectData {
 }
 
 export interface BreakdownItem {
+  id: string; // Unique ID for this breakdown item (e.g. "Vitrerie-0")
   phase: string;
   totalPhase: number;
   typologies: {

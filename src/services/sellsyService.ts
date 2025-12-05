@@ -317,8 +317,12 @@ export const createEstimate = async (project: ProjectData, clientId: string): Pr
             // Subject is no longer added as a line item
             // if (project.subject) { ... }
 
-            const { calculateBreakdown, getStandardPhases } = await import('./calculationService');
-            const activePhases = getStandardPhases(project.nbPhases);
+            const { calculateBreakdown } = await import('./calculationService');
+            // Use activePhases from project data to support multiple phases of same type
+            const activePhases = project.activePhases && project.activePhases.length > 0
+                ? project.activePhases
+                : (await import('./calculationService')).getStandardPhases(project.nbPhases);
+
             const breakdown = calculateBreakdown(solution.priceFinal, project.typologies, activePhases);
 
             // Get Tax ID for 20%

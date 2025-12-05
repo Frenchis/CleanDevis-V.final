@@ -255,7 +255,7 @@ export const calculateBreakdown = (
     totalPhaseWeight += PHASE_WEIGHTS[p as keyof typeof PHASE_WEIGHTS] || 0;
   });
 
-  const breakdown: BreakdownItem[] = activePhases.map(phaseName => {
+  const breakdown: BreakdownItem[] = activePhases.map((phaseName, index) => {
     const pWeight = PHASE_WEIGHTS[phaseName as keyof typeof PHASE_WEIGHTS] || 0;
     const phaseTotal = totalPrice * (pWeight / totalPhaseWeight);
 
@@ -269,6 +269,7 @@ export const calculateBreakdown = (
     });
 
     return {
+      id: `${phaseName}-${index}`, // Unique ID based on phase name and position
       phase: phaseName,
       totalPhase: phaseTotal,
       typologies: typoPrices

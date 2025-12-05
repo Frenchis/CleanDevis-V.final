@@ -143,15 +143,23 @@ export const Devis = () => {
 
   const PHASE_ORDER = ['Vitrerie', 'OPR', 'Pré-livraison', 'Livraison'];
 
-  const handlePhaseToggle = (phase: string) => {
+  const handleAddPhase = (phase: string) => {
     setActivePhases(prev => {
-      const newPhases = prev.includes(phase)
-        ? prev.filter(p => p !== phase)
-        : [...prev, phase];
-
+      const newPhases = [...prev, phase];
       return newPhases.sort((a, b) => {
         return PHASE_ORDER.indexOf(a) - PHASE_ORDER.indexOf(b);
       });
+    });
+  };
+
+  const handleRemovePhase = (phase: string) => {
+    setActivePhases(prev => {
+      const index = prev.lastIndexOf(phase);
+      if (index === -1) return prev;
+
+      const newPhases = [...prev];
+      newPhases.splice(index, 1);
+      return newPhases;
     });
   };
 
@@ -162,9 +170,9 @@ export const Devis = () => {
     }));
   };
 
-  const handleUnitPriceChange = (phaseName: string, type: string, newVal: number) => {
+  const handleUnitPriceChange = (id: string, type: string, newVal: number) => {
     const newBreakdown = breakdown.map(item => {
-      if (item.phase === phaseName) {
+      if (item.id === id) {
         const newTypos = { ...item.typologies, [type]: newVal };
 
         // Recalculate phase total
@@ -188,9 +196,9 @@ export const Devis = () => {
     setCalculatedTotal(total);
   };
 
-  const handleGlobalPhaseChange = (phaseName: string, newVal: number) => {
+  const handleGlobalPhaseChange = (id: string, newVal: number) => {
     const newBreakdown = breakdown.map(item => {
-      if (item.phase === phaseName) {
+      if (item.id === id) {
         return { ...item, totalPhase: newVal };
       }
       return item;
@@ -590,21 +598,40 @@ export const Devis = () => {
           </div>
 
           <div className="space-y-2">
-            {Object.keys(PHASE_WEIGHTS).map((phase) => (
-              <label key={phase} className={`flex items-center justify-between p-3 rounded-xl cursor-pointer border transition-all ${activePhases.includes(phase) ? 'bg-slate-100/80 dark:bg-slate-800/80 border-slate-300 dark:border-slate-600 shadow-sm' : 'bg-slate-50/30 dark:bg-slate-800/30 border-transparent opacity-60 hover:opacity-100'}`}>
-                <div className="flex items-center gap-3">
-                  <IosCheckbox
-                    checked={activePhases.includes(phase)}
-                    onChange={() => handlePhaseToggle(phase)}
-                    variant="green"
-                  />
-                  <span className="text-slate-700 dark:text-slate-200 font-medium">{phase}</span>
+            {Object.keys(PHASE_WEIGHTS).map((phase) => {
+              const count = activePhases.filter(p => p === phase).length;
+              return (
+                <div key={phase} className={`flex items-center justify-between p-3 rounded-xl border transition-all ${count > 0 ? 'bg-slate-100/80 dark:bg-slate-800/80 border-slate-300 dark:border-slate-600 shadow-sm' : 'bg-slate-50/30 dark:bg-slate-800/30 border-transparent opacity-60 hover:opacity-100'}`}>
+                  <div className="flex items-center gap-3">
+                    <span className="text-slate-700 dark:text-slate-200 font-medium">{phase}</span>
+                    {count > 0 && (
+                      <span className="text-xs font-bold bg-brand-blue/10 text-brand-blue px-2 py-0.5 rounded-full">
+                        x{count}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold bg-slate-200 dark:bg-slate-900 text-slate-500 dark:text-slate-400 px-2 py-1 rounded mr-2">
+                      Coef. {PHASE_WEIGHTS[phase as keyof typeof PHASE_WEIGHTS]}
+                    </span>
+                    <button
+                      onClick={() => handleRemovePhase(phase)}
+                      className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${count > 0 ? 'bg-red-100 text-red-500 hover:bg-red-200' : 'bg-slate-100 text-slate-300 cursor-not-allowed'}`}
+                      disabled={count === 0}
+                    >
+                      -
+                    </button>
+                    <button
+                      onClick={() => handleAddPhase(phase)}
+                      className="w-8 h-8 flex items-center justify-center rounded-lg bg-emerald-100 text-emerald-600 hover:bg-emerald-200 transition-colors"
+                    >
+                      +
+                    </button>
+                  </div>
                 </div>
-                <span className="text-xs font-bold bg-slate-200 dark:bg-slate-900 text-slate-500 dark:text-slate-400 px-2 py-1 rounded">
-                  Coef. {PHASE_WEIGHTS[phase as keyof typeof PHASE_WEIGHTS]}
-                </span>
-              </label>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -652,7 +679,7 @@ export const Devis = () => {
                                 type="number"
                                 className="w-32 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg pl-3 pr-8 py-2 text-right text-slate-900 dark:text-slate-200 font-mono focus:bg-white dark:focus:bg-slate-800 focus:border-brand-green focus:ring-2 focus:ring-brand-green/20 outline-none transition-all"
                                 value={item.typologies[t] ? Number(item.typologies[t]).toFixed(2) : 0}
-                                onChange={(e) => handleUnitPriceChange(item.phase, t, parseFloat(e.target.value) || 0)}
+                                onChange={(e) => handleUnitPriceChange(item.id, t, parseFloat(e.target.value) || 0)}
                               />
                               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 dark:text-slate-500 pointer-events-none">€</span>
                             </div>
@@ -665,7 +692,7 @@ export const Devis = () => {
                               type="number"
                               className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg pl-3 pr-8 py-2 text-right text-slate-900 dark:text-slate-200 font-mono focus:bg-white dark:focus:bg-slate-800 focus:border-brand-green focus:ring-2 focus:ring-brand-green/20 outline-none transition-all"
                               value={Math.round(item.totalPhase)}
-                              onChange={(e) => handleGlobalPhaseChange(item.phase, parseFloat(e.target.value) || 0)}
+                              onChange={(e) => handleGlobalPhaseChange(item.id, parseFloat(e.target.value) || 0)}
                             />
                             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 dark:text-slate-500 pointer-events-none">€</span>
                           </div>
