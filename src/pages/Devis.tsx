@@ -319,6 +319,7 @@ export const Devis = () => {
         typologies: typologies,
         nbPhases: activePhases.length,
         nbLogements: totalApartments, // Update with current total
+        surfaceArea: surfaceArea, // Update with current surface area
         subject: subject || projectName
       };
 
