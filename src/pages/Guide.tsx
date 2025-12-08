@@ -54,10 +54,10 @@ export const Guide: React.FC = () => {
                             </p>
                             <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700 text-sm">
                                 <p className="font-semibold mb-2">Où le trouver ?</p>
-                                <p>Dans l'URL de votre navigateur quand vous êtes sur le devis Sellsy :</p>
-                                <code className="block mt-2 bg-white dark:bg-black p-2 rounded border border-slate-200 dark:border-slate-800 text-blue-600 dark:text-blue-400 font-mono text-xs">
-                                    https://www.sellsy.com/estimates/<span className="font-bold underline decoration-wavy">123456</span>
-                                </code>
+                                <p className="mb-3">Dans l'URL de votre navigateur quand vous êtes sur le devis Sellsy :</p>
+                                <div className="rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 shadow-sm mb-2">
+                                    <img src="/images/sellsy-id-helper.png" alt="Exemple URL Sellsy" className="w-full h-auto" />
+                                </div>
                             </div>
                         </div>
 
