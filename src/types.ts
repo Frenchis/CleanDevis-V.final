@@ -67,6 +67,7 @@ export interface ProjectData {
   client: string;
   sellsyClientId?: string;
   sellsyClientType?: 'company' | 'individual';
+  sellsyEstimateId?: number; // Linked Sellsy Estimate ID
   nbLogements: number;
   surfaceTotal: number;
   nbPhases: number;

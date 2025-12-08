@@ -168,6 +168,7 @@ export const importEstimateFromSellsy = async (estimateId: number): Promise<Part
                 client: clientName,
                 sellsyClientId: sellsyClientId,
                 sellsyClientType: sellsyClientType,
+                sellsyEstimateId: estimate.id, // Add Imported ID
                 activePhases: activePhases,
                 typologies: typologies,
                 nbPhases: activePhases.length,

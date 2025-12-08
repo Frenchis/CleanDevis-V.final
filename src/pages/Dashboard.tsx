@@ -11,7 +11,8 @@ import {
   CheckCircle,
   ArrowRight,
   Loader2,
-  Calendar
+  Calendar,
+  CloudLightning
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { ProjectData } from '../types';
@@ -35,7 +36,7 @@ export const Dashboard = () => {
           .from('quotes')
           .select('*')
           .order('created_at', { ascending: false })
-          .limit(5);
+          .limit(10);
 
         if (recentError) throw recentError;
 
@@ -208,11 +209,23 @@ export const Dashboard = () => {
               {recentProjects.map((project) => (
                 <div key={project.id} className="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors flex items-center justify-between group">
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-brand-blue/10 flex items-center justify-center text-brand-blue font-bold text-sm">
+                    <div className="w-10 h-10 rounded-full bg-brand-blue/10 flex items-center justify-center text-brand-blue font-bold text-sm relative">
                       {project.client.substring(0, 2).toUpperCase()}
+                      {project.sellsyEstimateId && (
+                        <div className="absolute -bottom-1 -right-1 bg-brand-blue text-white p-0.5 rounded-full border-2 border-white dark:border-slate-900" title={`Exporté Sellsy #${project.sellsyEstimateId}`}>
+                          <CloudLightning className="w-3 h-3" />
+                        </div>
+                      )}
                     </div>
                     <div>
-                      <h4 className="font-bold text-slate-900 dark:text-white text-sm">{project.name}</h4>
+                      <h4 className="font-bold text-slate-900 dark:text-white text-sm flex items-center gap-2">
+                        {project.name}
+                        {project.sellsyEstimateId && (
+                          <span className="text-[10px] bg-blue-100 dark:bg-blue-900/30 text-blue-600 px-1.5 py-0.5 rounded border border-blue-200 dark:border-blue-800/50">
+                            Sellsy
+                          </span>
+                        )}
+                      </h4>
                       <p className="text-xs text-slate-500 dark:text-slate-400">
                         {project.client} • {new Date(project.date).toLocaleDateString()}
                       </p>

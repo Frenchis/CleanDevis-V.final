@@ -491,9 +491,22 @@ export const Devis = () => {
         // If we want to switch to "linked" mode after creation:
         if (!isUpdate) setImportSellsyId(result.id.toString());
 
+        // Update Project Data with the Sellsy ID to mark it as exported
+        setProjectData(prev => prev ? { ...prev, sellsyEstimateId: result.id } : null);
+
+        // Auto-save the link to Supabase immediately to ensure Dashboard sees it
+        if (projectData && projectData.id) {
+          // Create a temporary object with the new ID
+          const updatedWithId = { ...projectData, sellsyEstimateId: result.id };
+          await supabase.from('quotes').update({
+            data: updatedWithId, // Update the JSON
+            updated_at: new Date().toISOString()
+          }).eq('id', projectData.id);
+        }
+
         const backOfficeLink = `https://www.sellsy.com/?_f=estimateOverview&id=${result.id}&contextId=saleestimates_692cb8424256c`;
         toast.success(isUpdate ? "Devis mis à jour avec succès !" : `Devis créé avec succès ! ID: ${result.id}`);
-        window.open(backOfficeLink, '_blank');
+        // window.open(backOfficeLink, '_blank'); // Optional: Open Sellsy
       } else {
         throw new Error("Pas de réponse de Sellsy");
       }
