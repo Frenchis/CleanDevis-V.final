@@ -95,6 +95,14 @@ export const Devis = () => {
     if (data.activePhases) setActivePhases(data.activePhases);
     if (data.name) setProjectName(data.name);
 
+    // Set Target Price if available (from Import)
+    if (data.selectedSolution && data.selectedSolution.priceFinal) {
+      setTargetPrice(data.selectedSolution.priceFinal);
+    }
+
+    // Update global project data (Client, ID, etc)
+    setProjectData(prev => prev ? { ...prev, ...data } : data as ProjectData);
+
     // Reset surface area as we use typologies
     setSurfaceArea(0);
 
