@@ -533,6 +533,9 @@ export const Devis = () => {
               </p>
             </div>
           </div>
+        </div>
+
+        <div className="flex items-center gap-4">
           <button
             onClick={handleClear}
             className="flex items-center gap-2 px-4 py-3 bg-red-500/10 text-red-500 border border-red-500/20 rounded-xl hover:bg-red-500/20 transition-colors font-medium"
