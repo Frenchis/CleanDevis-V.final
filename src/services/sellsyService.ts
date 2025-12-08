@@ -4,12 +4,23 @@ import { supabase } from '../lib/supabaseClient';
 
 // Helper to determine API URL based on environment
 const getApiUrl = (endpoint: string) => {
-    // In development (Vite), use the local proxy
-    if (import.meta.env.DEV) {
+    // Check if running in browser environment
+    const isBrowser = typeof window !== 'undefined';
+
+    // Safely check for Vite Dev mode
+    const isDev = isBrowser && (import.meta as any)?.env?.DEV;
+
+    if (isDev) {
         return `/api/sellsy${endpoint}`;
     }
+
     // In production (Vercel), use the serverless proxy function
-    return `/api/proxy?endpoint=${encodeURIComponent(endpoint)}`;
+    if (isBrowser) {
+        return `/api/proxy?endpoint=${encodeURIComponent(endpoint)}`;
+    }
+
+    // In Node.js testing environment, verify if we should hit real API directly
+    return `https://api.sellsy.com/v2${endpoint}`;
 };
 
 interface SellsyTokenResponse {
@@ -27,7 +38,7 @@ const clearToken = () => {
 };
 
 // Helper to get headers with auth handling
-const getHeaders = async (config: GlobalConfig, forceRefresh = false): Promise<Headers> => {
+export const getHeaders = async (config: GlobalConfig, forceRefresh = false): Promise<Headers> => {
     const clientId = config.sellsy?.clientId;
     const clientSecret = config.sellsy?.clientSecret;
 
@@ -281,28 +292,12 @@ const getTaxId = async (config: GlobalConfig, rate: number): Promise<number> => 
     return tax ? tax.id : 0;
 };
 
-const getPhaseDescription = (phase: string, nbLogements: number, surfaceArea?: number): string => {
-    const header = (surfaceArea && surfaceArea > 0)
-        ? `[ Projet de ${surfaceArea} m² ] :`
-        : `[ ${nbLogements} Appartements ] :`;
-
-    switch (phase) {
-        case 'OPR':
-            return `<b>Nettoyage OPR :</b><br>${header}<br>Dépoussiérage des sols et lavage adapté suivant leurs natures.<br>Nettoyage des appareils sanitaires, lavabos, douches et baignoires.<br>Nettoyage de la faïence et des éviers.<br><br><b>Parties communes :</b><br>Dépoussiérage des sols et lavage adapté suivant leurs natures.<br>Lavage des marches/circulations d’escalier.`;
-        case 'Vitrerie':
-            return `<b>Nettoyage des vitreries - 1 Passage - :</b><br><br><b>Vitrerie intérieure :</b><br>Aspiration des rainures de fenêtres;<br>Lessivage des encadrements;<br>Nettoyage des vitreries sur les 2 faces.<br><br><b>Vitrerie extérieure :</b><br>Aspiration des rainures de fenêtres;<br>Lessivage des encadrements;<br>Nettoyage des vitreries sur les 2 faces.`;
-        case 'Pré-livraison':
-            return `<b>Nettoyage de Pré-livraison :</b><br>${header}<br>Dépoussiérage des sols et lavage adapté suivant leurs natures.<br>Nettoyage des appareils sanitaires, lavabos, douches et baignoires.<br>Nettoyage de la faïence et des éviers.<br><br><b>Parties communes :</b><br>Dépoussiérage des sols et lavage adapté suivant leurs natures.<br>Lavage des marches/circulations d’escalier`;
-        case 'Livraison':
-            return `<b>Nettoyage de Livraison :</b><br>${header}<br>Dépoussiérage des sols et lavage adapté suivant leurs natures.<br>Nettoyage des appareils sanitaires, lavabos, douches et baignoires.<br>Nettoyage de la faïence et des éviers.<br><br><b>Parties communes :</b><br>Dépoussiérage des sols et lavage adapté suivant leurs natures.<br>Lavage des marches/circulations d’escalier`;
-        default:
-            return `<b>${phase} :</b><br>${header}<br>Prestation de nettoyage.`;
-    }
-};
-
 const stripHtml = (html: string) => {
     return html.replace(/<[^>]*>?/gm, '');
 };
+
+
+import { buildEstimatePayload } from './sellsyPayloadBuilder';
 
 export const createEstimate = async (project: ProjectData, clientId: string): Promise<{ id: number, publicLink?: string } | null> => {
     const config = getConfig();
@@ -312,109 +307,40 @@ export const createEstimate = async (project: ProjectData, clientId: string): Pr
 
     const performCreate = async (retry = false): Promise<{ id: number, publicLink?: string } | null> => {
         try {
-            const lines: SellsyEstimateLine[] = [];
 
-            // Subject is no longer added as a line item
-            // if (project.subject) { ... }
+            const estimate = await buildEstimatePayload(project, clientId, config);
 
-            const { calculateBreakdown } = await import('./calculationService');
-            // Use activePhases from project data to support multiple phases of same type
-            const activePhases = project.activePhases && project.activePhases.length > 0
-                ? project.activePhases
-                : (await import('./calculationService')).getStandardPhases(project.nbPhases);
+            // Fetch taxes if possible to correct the tax_id (Optional enhancement: Update estimate with real tax Ids)
+            // But since buildEstimatePayload is now pure, we might need to inject taxId or update lines here.
+            // For now, let's keep it simple as before (taxId 0 was used in fallback or inside logic).
+            // Actually, in the previous code I had getTaxId call inside buildEstimatePayload.
+            // In the new file I removed getTaxId to avoid dependency.
+            // So we should ideally map tax_id here.
 
-            const breakdown = calculateBreakdown(solution.priceFinal, project.typologies, activePhases);
-
-            // Get Tax ID for 20%
+            // Re-fetch tax ID here to be correct
             let taxId = 0;
             if (config.sellsy?.clientId) {
-                taxId = await getTaxId(config, 20);
-                if (!taxId) console.warn("Tax ID for 20% not found in Sellsy. Using 0.");
+                try {
+                    taxId = await getTaxId(config, 20);
+                } catch (e) { console.warn("Could not fetch tax ID"); }
             }
 
-            breakdown.forEach((phaseItem, index) => {
-                // Insert page break before each phase except the first one
-                if (index > 0) {
-                    lines.push({ type: 'break-page' });
-                }
-
-                const phaseName = phaseItem.phase;
-
-                // Add Comment Line for Phase Description
-                lines.push({
-                    type: 'comment',
-                    text: getPhaseDescription(phaseName, project.nbLogements, project.surfaceArea)
-                });
-
-                const productCode = config.sellsy?.productMapping?.[phaseName as Phase] || 'GENERIC_SERVICE';
-
-                let hasTypologies = false;
-                Object.entries(phaseItem.typologies).forEach(([type, price]) => {
-                    const count = project.typologies[type as keyof typeof project.typologies] || 0;
-                    if (count > 0) {
-                        hasTypologies = true;
-                        lines.push({
-                            type: 'single',
-                            reference: productCode,
-                            description: `${phaseName} - Typologie ${type}`,
-                            quantity: count.toString(),
-                            unit_amount: price.toFixed(2), // Price per unit
-                            tax_id: taxId
-                        });
+            // Update tax_id in rows if we found one
+            if (taxId !== 0) {
+                estimate.rows = estimate.rows.map(row => {
+                    if ((row.type === 'single') && row.tax_id === 0) {
+                        return { ...row, tax_id: taxId };
                     }
+                    return row;
                 });
+            }
 
-                // FALLBACK: If no typologies were added (Global Surface Mode), add a single line for the phase
-                if (!hasTypologies) {
-                    lines.push({
-                        type: 'single',
-                        reference: productCode,
-                        description: `${phaseName} - Forfait Global`,
-                        quantity: "1",
-                        unit_amount: phaseItem.totalPhase.toFixed(2),
-                        tax_id: taxId
-                    });
-                }
-
-                // Add Sub-Total for Phase
-                lines.push({
-                    type: 'sub-total'
-                });
-
-                // Add Break Line
-                lines.push({
-                    type: 'break-line'
-                });
-            });
-
-            // Determine client type
-            let relatedType = (project.sellsyClientType || 'company') as string;
-            // Safeguard: if somehow it is 'client' or 'corporation', map it to 'company'
-            if (relatedType === 'client' || relatedType === 'corporation') relatedType = 'company';
-            if (relatedType === 'person') relatedType = 'individual';
-
-            // Clean subject for the Sellsy Title (Plain text only)
-            const cleanSubject = project.subject ? stripHtml(project.subject) : `Devis Nettoyage - ${project.name}`;
-
-            const estimate: SellsyEstimate = {
-                related: [{
-                    type: relatedType as 'company' | 'individual',
-                    id: parseInt(clientId)
-                }],
-                subject: cleanSubject,
-                currency: 'EUR',
-                rows: lines,
-                settings: {
-                    pdf_display: {
-                        show_reference_column: false
-                    }
-                }
-            };
 
             if (!config.sellsy?.clientId) {
                 console.warn("Sellsy Client ID missing in config");
                 throw new Error("Sellsy configuration missing");
             }
+
 
             // Real API Call
             const headers = await getHeaders(config, retry);
@@ -428,6 +354,8 @@ export const createEstimate = async (project: ProjectData, clientId: string): Pr
 
             if (response.status === 401 && !retry) {
                 console.warn('Sellsy Token expired or invalid. Retrying...');
+                // We might need to ensure token refresh happens before retry if it was the issue
+                // The getHeaders(forceRefresh=true) is usually called inside the retry logic if structured that way
                 return performCreate(true);
             }
 
@@ -455,6 +383,71 @@ export const createEstimate = async (project: ProjectData, clientId: string): Pr
     };
 
     return performCreate();
+};
+
+export const updateEstimate = async (estimateId: number, project: ProjectData, clientId: string): Promise<{ id: number, publicLink?: string } | null> => {
+    const config = getConfig();
+    const solution = project.selectedSolution;
+
+    if (!solution) throw new Error("Aucune solution sélectionnée pour le devis");
+
+    const performUpdate = async (retry = false): Promise<{ id: number, publicLink?: string } | null> => {
+        try {
+            const estimate = await buildEstimatePayload(project, clientId, config);
+
+            // Re-fetch tax ID here to be correct (Same logic as create)
+            let taxId = 0;
+            if (config.sellsy?.clientId) {
+                try {
+                    taxId = await getTaxId(config, 20);
+                } catch (e) { console.warn("Could not fetch tax ID"); }
+            }
+
+            if (taxId !== 0) {
+                estimate.rows = estimate.rows.map(row => {
+                    if ((row.type === 'single') && row.tax_id === 0) {
+                        return { ...row, tax_id: taxId };
+                    }
+                    return row;
+                });
+            }
+
+            if (!config.sellsy?.clientId) {
+                throw new Error("Sellsy configuration missing");
+            }
+
+            const headers = await getHeaders(config, retry);
+            console.log(`Updating Estimate ${estimateId}. Payload:`, JSON.stringify(estimate, null, 2));
+
+            const response = await fetch(getApiUrl(`/estimates/${estimateId}`), {
+                method: 'PUT',
+                headers: headers,
+                body: JSON.stringify(estimate)
+            });
+
+            if (response.status === 401 && !retry) {
+                console.warn('Sellsy Token expired or invalid. Retrying update...');
+                return performUpdate(true);
+            }
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error("Sellsy Update Error:", errorText);
+                throw new Error(`Erreur Mise à jour Sellsy: ${response.statusText} - ${errorText}`);
+            }
+
+            const data = await response.json();
+            return {
+                id: data.id,
+                publicLink: data.public_link
+            };
+        } catch (error) {
+            console.error('Sellsy Update Estimate Error:', error);
+            throw error;
+        }
+    };
+
+    return performUpdate();
 };
 
 /**

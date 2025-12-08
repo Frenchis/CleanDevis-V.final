@@ -8,9 +8,10 @@ import { EyeCatchingButton_v2 } from '../components/ui/shiny-button';
 import { IosCheckbox } from '../components/ui/ios-checkbox';
 import gsap from 'gsap';
 
-import { createEstimate } from '../services/sellsyService';
+import { createEstimate, updateEstimate } from '../services/sellsyService';
 import { supabase } from '../lib/supabaseClient';
-import { Download, ArrowLeft, Save, RefreshCw, CheckCircle, AlertTriangle, Building2, Trash2, CloudLightning, Loader2 } from 'lucide-react';
+import { Download, ArrowLeft, Save, RefreshCw, CheckCircle, AlertTriangle, Building2, Trash2, CloudLightning, Loader2, Search } from 'lucide-react';
+import { ImportPreviewModal } from '../components/ImportPreviewModal';
 
 const DEFAULT_TYPOLOGIES: TypologyCount = { T1: 0, T2: 0, T3: 0, T4: 0, T5: 0, Autre: 0 };
 const COLORS = ['#4D9805', '#2F3388', '#0ea5e9', '#6366f1'];
@@ -38,7 +39,71 @@ export const Devis = () => {
 
   const [isInitialized, setIsInitialized] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false); // New state for import loading
+  const [importSellsyId, setImportSellsyId] = useState<string>(""); // New state for input
   const [projectData, setProjectData] = useState<ProjectData | null>(null);
+
+  // Import Validation State
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [pendingImportData, setPendingImportData] = useState<Partial<ProjectData> | null>(null);
+
+  // Import Service
+  // Note: We need to dynamically import or standard import. Standard is fine.
+  // But wait, the file is recently created.
+
+
+
+  // -- Handlers --
+
+  const handleImportSellsy = async () => {
+    if (!importSellsyId) {
+      toast.error("Veuillez saisir un ID de devis Sellsy");
+      return;
+    }
+
+    setIsImporting(true);
+    try {
+      // Dynamic import to avoid issues if service has complex deps loaded early
+      const { importEstimateFromSellsy } = await import('../services/sellsyImportService');
+
+      // Clean ID input
+      const cleanId = importSellsyId.trim();
+      let id = parseInt(cleanId);
+
+      // Support raw text "DEV-XXXX" searching if we implement search by ref later
+      // For now, strict ID parsing
+      if (isNaN(id)) throw new Error("ID Sellsy invalide (doit être numérique)");
+
+      const importedData = await importEstimateFromSellsy(id);
+
+      if (importedData) {
+        setPendingImportData(importedData);
+        setShowImportModal(true);
+      } else {
+        toast.error("Impossible de récupérer les données du devis");
+      }
+    } catch (error: any) {
+      console.error("Import failed", error);
+      toast.error("Erreur import: " + (error.message || "Erreur inconnue"));
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  const confirmImport = (data: Partial<ProjectData>) => {
+    if (data.typologies) setTypologies(data.typologies);
+    if (data.activePhases) setActivePhases(data.activePhases);
+    if (data.name) setProjectName(data.name);
+
+    // Reset surface area as we use typologies
+    setSurfaceArea(0);
+
+    // Close Modal
+    setShowImportModal(false);
+    setPendingImportData(null);
+
+    toast.success("Données importées validées !");
+  };
 
   // -- GSAP Animations --
   useEffect(() => {
@@ -310,10 +375,16 @@ export const Devis = () => {
       return;
     }
 
+    const isUpdate = !!importSellsyId;
+    const actionText = isUpdate ? 'Mettre à jour le devis' : 'Créer le devis';
+    const msg = isUpdate
+      ? `Voulez-vous METTRE À JOUR le devis Sellsy #${importSellsyId} ?`
+      : `Voulez-vous créer un nouveau devis Sellsy pour ${projectName} ?`;
+
     if (!await confirm({
       title: 'Export Sellsy',
-      message: `Voulez-vous créer un devis Sellsy pour ${projectName} ?`,
-      confirmText: 'Créer le devis',
+      message: msg,
+      confirmText: actionText,
       type: 'info'
     })) return;
 
@@ -330,6 +401,7 @@ export const Devis = () => {
         ...projectData,
         typologies: typologies,
         nbPhases: activePhases.length,
+        activePhases: activePhases, // FIX: Pass current active phases (including duplicates)
         nbLogements: totalApartments, // Update with current total
         surfaceArea: surfaceArea, // Update with current surface area
         subject: subject || projectName
@@ -355,11 +427,22 @@ export const Devis = () => {
         currentProject.selectedSolution.priceFinal = calculatedTotal;
       }
 
-      const result = await createEstimate(currentProject, projectData.sellsyClientId);
+      let result;
+
+      if (isUpdate) {
+        result = await updateEstimate(parseInt(importSellsyId), currentProject, projectData.sellsyClientId);
+      } else {
+        result = await createEstimate(currentProject, projectData.sellsyClientId);
+      }
 
       if (result) {
+        // If it was a creation, we might want to set the importID to this new ID so subsequent saves are updates?
+        // But user flow might expect separate quotes. Let's keep it simple.
+        // If we want to switch to "linked" mode after creation:
+        if (!isUpdate) setImportSellsyId(result.id.toString());
+
         const backOfficeLink = `https://www.sellsy.com/?_f=estimateOverview&id=${result.id}&contextId=saleestimates_692cb8424256c`;
-        toast.success(`Devis créé avec succès ! ID: ${result.id}`);
+        toast.success(isUpdate ? "Devis mis à jour avec succès !" : `Devis créé avec succès ! ID: ${result.id}`);
         window.open(backOfficeLink, '_blank');
       } else {
         throw new Error("Pas de réponse de Sellsy");
@@ -435,6 +518,37 @@ export const Devis = () => {
           </EyeCatchingButton_v2>
         </div>
       </div>
+
+
+      {/* Search Input Row (New Location) */}
+      <div className="mb-8 flex justify-center">
+        <div className="bg-white dark:bg-slate-800 p-2 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 flex items-center gap-2 max-w-xl w-full">
+          <div className="p-2 bg-slate-100 dark:bg-slate-700 rounded-xl text-slate-500">
+            <Search className="w-5 h-5" />
+          </div>
+          <input
+            type="text"
+            placeholder="Importer depuis Sellsy (ID du devis)"
+            className="bg-transparent text-slate-900 dark:text-white flex-grow outline-none font-medium placeholder:font-normal"
+            value={importSellsyId}
+            onChange={(e) => setImportSellsyId(e.target.value)}
+          />
+          <EyeCatchingButton_v2
+            onClick={handleImportSellsy}
+            disabled={isImporting || !importSellsyId}
+            className="py-2 px-4 text-xs"
+          >
+            {isImporting ? <Loader2 className="w-3 h-3 animate-spin" /> : "Importer"}
+          </EyeCatchingButton_v2>
+        </div>
+      </div>
+
+      <ImportPreviewModal
+        isOpen={showImportModal}
+        onClose={() => { setShowImportModal(false); setPendingImportData(null); }}
+        onConfirm={confirmImport}
+        initialData={pendingImportData}
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6 auto-rows-[minmax(180px,auto)]">
 
@@ -738,5 +852,6 @@ export const Devis = () => {
 
       </div>
     </div>
+
   );
 };

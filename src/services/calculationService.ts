@@ -32,7 +32,7 @@ export const DEFAULT_CONFIG: GlobalConfig = {
   },
   marketRate: MARKET_RATE,
   sellsy: {
-    clientId: import.meta.env.VITE_SELLSY_CLIENT_ID || '',
+    clientId: (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_SELLSY_CLIENT_ID) || '',
     productMapping: {
       'Vitrerie': 'REE-VITRERIE',
       'OPR': 'REE-OPR',
@@ -50,13 +50,15 @@ export const PHASE_WEIGHTS = {
 };
 
 export const getConfig = (): GlobalConfig => {
-  const saved = localStorage.getItem('cleanDevis_config');
-  if (saved) {
-    try {
-      const parsed = JSON.parse(saved);
-      return { ...DEFAULT_CONFIG, ...parsed };
-    } catch (e) {
-      return DEFAULT_CONFIG;
+  if (typeof localStorage !== 'undefined') {
+    const saved = localStorage.getItem('cleanDevis_config');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        return { ...DEFAULT_CONFIG, ...parsed };
+      } catch (e) {
+        return DEFAULT_CONFIG;
+      }
     }
   }
   return DEFAULT_CONFIG;
