@@ -298,8 +298,9 @@ const stripHtml = (html: string) => {
 
 
 import { buildEstimatePayload } from './sellsyPayloadBuilder';
+import { BreakdownItem } from '../types';
 
-export const createEstimate = async (project: ProjectData, clientId: string): Promise<{ id: number, publicLink?: string } | null> => {
+export const createEstimate = async (project: ProjectData, clientId: string, breakdown?: BreakdownItem[]): Promise<{ id: number, publicLink?: string } | null> => {
     const config = getConfig();
     const solution = project.selectedSolution;
 
@@ -308,7 +309,7 @@ export const createEstimate = async (project: ProjectData, clientId: string): Pr
     const performCreate = async (retry = false): Promise<{ id: number, publicLink?: string } | null> => {
         try {
 
-            const estimate = await buildEstimatePayload(project, clientId, config);
+            const estimate = await buildEstimatePayload(project, clientId, config, breakdown);
 
             // Fetch taxes if possible to correct the tax_id (Optional enhancement: Update estimate with real tax Ids)
             // But since buildEstimatePayload is now pure, we might need to inject taxId or update lines here.
@@ -361,7 +362,7 @@ export const createEstimate = async (project: ProjectData, clientId: string): Pr
 
             if (!response.ok) {
                 const errorText = await response.text();
-                console.error("Sellsy API Error:", errorText);
+                // console.error("Sellsy API Error:", errorText);
                 throw new Error(`Erreur Sellsy: ${response.statusText} - ${errorText}`);
             }
 
@@ -385,7 +386,7 @@ export const createEstimate = async (project: ProjectData, clientId: string): Pr
     return performCreate();
 };
 
-export const updateEstimate = async (estimateId: number, project: ProjectData, clientId: string): Promise<{ id: number, publicLink?: string } | null> => {
+export const updateEstimate = async (estimateId: number, project: ProjectData, clientId: string, breakdown?: BreakdownItem[]): Promise<{ id: number, publicLink?: string } | null> => {
     const config = getConfig();
     const solution = project.selectedSolution;
 
@@ -393,7 +394,7 @@ export const updateEstimate = async (estimateId: number, project: ProjectData, c
 
     const performUpdate = async (retry = false): Promise<{ id: number, publicLink?: string } | null> => {
         try {
-            const estimate = await buildEstimatePayload(project, clientId, config);
+            const estimate = await buildEstimatePayload(project, clientId, config, breakdown);
 
             // Re-fetch tax ID here to be correct (Same logic as create)
             let taxId = 0;

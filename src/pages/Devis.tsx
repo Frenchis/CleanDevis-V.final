@@ -430,9 +430,9 @@ export const Devis = () => {
       let result;
 
       if (isUpdate) {
-        result = await updateEstimate(parseInt(importSellsyId), currentProject, projectData.sellsyClientId);
+        result = await updateEstimate(parseInt(importSellsyId), currentProject, projectData.sellsyClientId, breakdown);
       } else {
-        result = await createEstimate(currentProject, projectData.sellsyClientId);
+        result = await createEstimate(currentProject, projectData.sellsyClientId, breakdown);
       }
 
       if (result) {

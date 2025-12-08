@@ -24,7 +24,7 @@ const getPhaseDescription = (phase: string, nbLogements: number, surfaceArea?: n
     }
 };
 
-export const buildEstimatePayload = async (project: ProjectData, clientId: string, config: GlobalConfig): Promise<SellsyEstimate> => {
+export const buildEstimatePayload = async (project: ProjectData, clientId: string, config: GlobalConfig, existingBreakdown?: any[]): Promise<SellsyEstimate> => {
     // Subject is no longer added as a line item
     // if (project.subject) { ... }
 
@@ -41,9 +41,9 @@ export const buildEstimatePayload = async (project: ProjectData, clientId: strin
         ? project.activePhases
         : getStandardPhases(project.nbPhases);
 
-    // console.log("DEBUG: activePhases used for breakdown:", activePhases);
-
-    const breakdown = calculateBreakdown(solution.priceFinal, project.typologies, activePhases);
+    // If existingBreakdown is passed (from UI with manual edits), use it. 
+    // Otherwise calculate it from scratch.
+    const breakdown = existingBreakdown || calculateBreakdown(solution.priceFinal, project.typologies, activePhases);
 
     // Get Tax ID for 20% - For the builder we assume 0 or passed via config if needed. 
     // Testing getTaxId here would require dependency injection for fetching from API.
