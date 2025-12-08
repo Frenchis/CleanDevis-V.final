@@ -520,62 +520,17 @@ export const Devis = () => {
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          {/* Phase Selectors - Updated for Multiple Phases */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
-                Ventilation du Prix
-              </h1>
-              <div className="flex items-center gap-2">
-                <span className="px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-sm font-medium">
-                  {getStandardPhases(Math.min(4, activePhases.length)).length > 0 ? 'Mode Calcul' : 'Mode Manuel'}
-                </span>
-                <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
-                  {projectName} • Répartition par phase et typologie
-                </p>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              {Object.values(Phase).map((phase) => {
-                const count = activePhases.filter(p => p.type === phase).length;
-                const isActive = count > 0;
-
-                return (
-                  <div key={phase} className="flex items-center">
-                    <EyeCatchingButton_v2
-                      onClick={() => handleTogglePhase(phase)}
-                      // Use a subtle variation if active, or outline if inactive
-                      className={isActive
-                        ? "bg-blue-600 text-white shadow-blue-500/20 mr-1"
-                        : "bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-500 hover:text-blue-500 transition-all mr-1"
-                      }
-                    >
-                      {/* Count Badge if > 1 */}
-                      {count > 1 && (
-                        <span className="mr-2 px-1.5 py-0.5 bg-white text-blue-600 rounded-full text-xs font-bold shadow-sm">
-                          x{count}
-                        </span>
-                      )}
-                      {phase}
-                    </EyeCatchingButton_v2>
-
-                    {/* Small Add Button to easily add duplicates */}
-                    {isActive && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          addPhaseInstance(phase);
-                        }}
-                        className="p-2 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 transition-colors"
-                        title={`Ajouter une autre phase ${phase}`}
-                      >
-                        <Plus className="w-3 h-3" />
-                      </button>
-                    )}
-                  </div>
-                )
-              })}
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
+              Ventilation du Prix
+            </h1>
+            <div className="flex items-center gap-2">
+              <span className="px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-sm font-medium">
+                {getStandardPhases(Math.min(4, activePhases.length)).length > 0 ? 'Mode Calcul' : 'Mode Manuel'}
+              </span>
+              <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
+                {projectName} • Répartition par phase et typologie
+              </p>
             </div>
           </div>
           <button
