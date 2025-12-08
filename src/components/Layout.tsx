@@ -14,7 +14,8 @@ import {
   LogOut,
   Shield,
   CloudLightning,
-  FileText
+  FileText,
+  BookOpen
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'motion/react';
@@ -98,6 +99,13 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       href: "/settings",
       icon: (
         <Settings className="h-5 w-5 shrink-0" />
+      ),
+    },
+    {
+      label: "Guide",
+      href: "/guide",
+      icon: (
+        <BookOpen className="h-5 w-5 shrink-0" />
       ),
     },
   ];
