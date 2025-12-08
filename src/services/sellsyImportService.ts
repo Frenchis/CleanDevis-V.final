@@ -9,6 +9,7 @@ interface SellsyRow {
     description?: string;
     quantity?: string;
     unit_amount?: string;
+    unitAmount?: string; // Add camelCase support
 }
 
 const extractTextFromHtml = (html: string): string => {
@@ -76,7 +77,8 @@ export const importEstimateFromSellsy = async (estimateId: number): Promise<Part
 
             // Calculate Row Total
             const qty = parseFloat(row.quantity || '0');
-            const unit = parseFloat(row.unit_amount || '0');
+            // Check both snake_case and camelCase
+            const unit = parseFloat(row.unitAmount || row.unit_amount || '0');
             totalAmount += qty * unit;
 
             let linePhase: Phase | null = null;
