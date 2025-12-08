@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
-import { ProjectData, BreakdownItem, TypologyCount, SellsyClient } from '../types';
+import { ProjectData, BreakdownItem, TypologyCount, SellsyClient, Phase, PhaseItem } from '../types';
 import { calculateBreakdown, getStandardPhases, PHASE_WEIGHTS } from '../services/calculationService';
 import { ClientSearch } from '../components/ClientSearch';
 import { EyeCatchingButton_v2 } from '../components/ui/shiny-button';
@@ -10,7 +10,7 @@ import gsap from 'gsap';
 
 import { createEstimate, updateEstimate } from '../services/sellsyService';
 import { supabase } from '../lib/supabaseClient';
-import { Download, ArrowLeft, Save, RefreshCw, CheckCircle, AlertTriangle, Building2, Trash2, CloudLightning, Loader2, Search } from 'lucide-react';
+import { Download, ArrowLeft, Save, RefreshCw, CheckCircle, AlertTriangle, Building2, Trash2, CloudLightning, Loader2, Search, Plus } from 'lucide-react';
 import { ImportPreviewModal } from '../components/ImportPreviewModal';
 
 const DEFAULT_TYPOLOGIES: TypologyCount = { T1: 0, T2: 0, T3: 0, T4: 0, T5: 0, Autre: 0 };
@@ -147,19 +147,42 @@ export const Devis = () => {
       }
 
       if (proj.activePhases && proj.activePhases.length > 0) {
-        setActivePhases(proj.activePhases);
+        // Migration Check: If legacy array of strings, convert to PhaseItems
+        const first = proj.activePhases[0] as any;
+        if (typeof first === 'string') {
+          const items = (proj.activePhases as any as string[]).map(p => ({
+            id: crypto.randomUUID(),
+            type: p as Phase
+          }));
+          setActivePhases(items);
+        } else {
+          setActivePhases(proj.activePhases);
+        }
       } else {
         const stdPhases = getStandardPhases(proj.nbPhases);
-        setActivePhases(stdPhases);
+        const items: PhaseItem[] = stdPhases.map(p => ({
+          id: crypto.randomUUID(),
+          type: p as Phase
+        }));
+        setActivePhases(items);
       }
     } else {
-      // Try to load from localStorage
+      // Try to load from localStorage (Legacy support)
       const savedData = localStorage.getItem('devis_data');
       if (savedData) {
         try {
           const parsed = JSON.parse(savedData);
           if (parsed.typologies) setTypologies(parsed.typologies);
-          if (parsed.activePhases) setActivePhases(parsed.activePhases);
+
+          if (parsed.activePhases) {
+            const first = parsed.activePhases[0];
+            if (typeof first === 'string') {
+              setActivePhases((parsed.activePhases as string[]).map(p => ({ id: crypto.randomUUID(), type: p as Phase })));
+            } else {
+              setActivePhases(parsed.activePhases);
+            }
+          }
+
           if (parsed.targetPrice) setTargetPrice(parsed.targetPrice);
           if (parsed.projectName) setProjectName(parsed.projectName);
           if (parsed.subject) setSubject(parsed.subject);
@@ -179,13 +202,13 @@ export const Devis = () => {
   // -- Calculation Effect --
   // Triggered whenever inputs change (Target, Phases, Typologies)
   useEffect(() => {
-    // We only calculate if we have a target price and active phases
-    if (targetPrice > 0 && activePhases.length > 0) {
+    // We only calculate if we have active phases. Price can be 0 (e.g. manual mode or initial import).
+    if (activePhases.length > 0) {
 
       const totalUnits = (Object.values(typologies) as number[]).reduce((a, b) => a + b, 0);
 
       // Calculate breakdown even if totalUnits is 0 (Global mode)
-      const bd = calculateBreakdown(targetPrice, typologies, activePhases);
+      const bd = calculateBreakdown(targetPrice || 0, typologies, activePhases);
       setBreakdown(bd);
 
       // Calculate effective total (Verification)
@@ -213,23 +236,42 @@ export const Devis = () => {
   const PHASE_ORDER = ['Vitrerie', 'OPR', 'Pré-livraison', 'Livraison'];
 
   const handleAddPhase = (phase: string) => {
+    addPhaseInstance(phase as Phase);
+  };
+
+  const handleRemovePhase = (phase: string) => {
+    // Remove last instance
+    const reversed = [...activePhases].reverse();
+    const indexInReversed = reversed.findIndex(p => p.type === phase);
+    if (indexInReversed !== -1) {
+      const realIndex = activePhases.length - 1 - indexInReversed;
+      const newPhases = [...activePhases];
+      newPhases.splice(realIndex, 1);
+      setActivePhases(newPhases);
+    }
+  };
+
+  const addPhaseInstance = (phase: Phase) => {
     setActivePhases(prev => {
-      const newPhases = [...prev, phase];
+      const newItem: PhaseItem = { id: crypto.randomUUID(), type: phase };
+      const newPhases = [...prev, newItem];
       return newPhases.sort((a, b) => {
-        return PHASE_ORDER.indexOf(a) - PHASE_ORDER.indexOf(b);
+        return PHASE_ORDER.indexOf(a.type) - PHASE_ORDER.indexOf(b.type);
       });
     });
   };
 
-  const handleRemovePhase = (phase: string) => {
-    setActivePhases(prev => {
-      const index = prev.lastIndexOf(phase);
-      if (index === -1) return prev;
+  const removePhaseInstance = (id: string) => {
+    setActivePhases(prev => prev.filter(p => p.id !== id));
+  };
 
-      const newPhases = [...prev];
-      newPhases.splice(index, 1);
-      return newPhases;
-    });
+  const handleTogglePhase = (phase: Phase) => {
+    const count = activePhases.filter(p => p.type === phase).length;
+    if (count > 0) {
+      handleRemovePhase(phase);
+    } else {
+      addPhaseInstance(phase);
+    }
   };
 
   const handleTypologyChange = (key: keyof TypologyCount, value: number) => {
@@ -478,22 +520,64 @@ export const Devis = () => {
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <div>
-            <div className="flex items-center gap-3">
-              <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Devis</h2>
-              {totalLogements === 0 && (
-                <span className="px-2 py-1 rounded-lg bg-yellow-500/10 text-yellow-600 dark:text-yellow-500 text-xs font-bold border border-yellow-500/20">
-                  Mode Saisie
+          {/* Phase Selectors - Updated for Multiple Phases */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
+                Ventilation du Prix
+              </h1>
+              <div className="flex items-center gap-2">
+                <span className="px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-sm font-medium">
+                  {getStandardPhases(Math.min(4, activePhases.length)).length > 0 ? 'Mode Calcul' : 'Mode Manuel'}
                 </span>
-              )}
+                <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
+                  {projectName} • Répartition par phase et typologie
+                </p>
+              </div>
             </div>
-            <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
-              {projectName} • Répartition par phase et typologie
-            </p>
-          </div>
-        </div>
 
-        <div className="flex gap-3">
+            <div className="flex flex-wrap gap-2">
+              {Object.values(Phase).map((phase) => {
+                const count = activePhases.filter(p => p.type === phase).length;
+                const isActive = count > 0;
+
+                return (
+                  <div key={phase} className="flex items-center">
+                    <EyeCatchingButton_v2
+                      onClick={() => handleTogglePhase(phase)}
+                      // Use a subtle variation if active, or outline if inactive
+                      className={isActive
+                        ? "bg-blue-600 text-white shadow-blue-500/20 mr-1"
+                        : "bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-500 hover:text-blue-500 transition-all mr-1"
+                      }
+                    >
+                      {/* Count Badge if > 1 */}
+                      {count > 1 && (
+                        <span className="mr-2 px-1.5 py-0.5 bg-white text-blue-600 rounded-full text-xs font-bold shadow-sm">
+                          x{count}
+                        </span>
+                      )}
+                      {phase}
+                    </EyeCatchingButton_v2>
+
+                    {/* Small Add Button to easily add duplicates */}
+                    {isActive && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          addPhaseInstance(phase);
+                        }}
+                        className="p-2 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 transition-colors"
+                        title={`Ajouter une autre phase ${phase}`}
+                      >
+                        <Plus className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
           <button
             onClick={handleClear}
             className="flex items-center gap-2 px-4 py-3 bg-red-500/10 text-red-500 border border-red-500/20 rounded-xl hover:bg-red-500/20 transition-colors font-medium"
@@ -717,7 +801,7 @@ export const Devis = () => {
 
           <div className="space-y-2">
             {Object.keys(PHASE_WEIGHTS).map((phase) => {
-              const count = activePhases.filter(p => p === phase).length;
+              const count = activePhases.filter(p => p.type === phase).length;
               return (
                 <div key={phase} className={`flex items-center justify-between p-3 rounded-xl border transition-all ${count > 0 ? 'bg-slate-100/80 dark:bg-slate-800/80 border-slate-300 dark:border-slate-600 shadow-sm' : 'bg-slate-50/30 dark:bg-slate-800/30 border-transparent opacity-60 hover:opacity-100'}`}>
                   <div className="flex items-center gap-3">
@@ -734,14 +818,14 @@ export const Devis = () => {
                       Coef. {PHASE_WEIGHTS[phase as keyof typeof PHASE_WEIGHTS]}
                     </span>
                     <button
-                      onClick={() => handleRemovePhase(phase)}
+                      onClick={() => handleTogglePhase(phase as Phase)} // Toggle removes last instance if exists
                       className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${count > 0 ? 'bg-red-100 text-red-500 hover:bg-red-200' : 'bg-slate-100 text-slate-300 cursor-not-allowed'}`}
                       disabled={count === 0}
                     >
                       -
                     </button>
                     <button
-                      onClick={() => handleAddPhase(phase)}
+                      onClick={() => addPhaseInstance(phase as Phase)}
                       className="w-8 h-8 flex items-center justify-center rounded-lg bg-emerald-100 text-emerald-600 hover:bg-emerald-200 transition-colors"
                     >
                       +
@@ -778,6 +862,7 @@ export const Devis = () => {
                       <th className="py-4 px-2 font-bold text-center">Global / Forfait</th>
                     )}
                     <th className="py-4 px-4 font-bold text-right">S/Total</th>
+                    <th className="py-4 px-2"></th> {/* Trash column */}
                   </tr>
                 </thead>
                 <tbody className="text-sm">
@@ -818,6 +903,15 @@ export const Devis = () => {
                       )}
                       <td className="py-4 px-4 text-right font-bold text-brand-green">
                         {Math.round(item.totalPhase).toLocaleString()} €
+                      </td>
+                      <td className="py-4 px-2 text-center">
+                        <button
+                          onClick={() => removePhaseInstance(item.id)}
+                          className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                          title="Supprimer cette ligne"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </td>
                     </tr>
                   ))}

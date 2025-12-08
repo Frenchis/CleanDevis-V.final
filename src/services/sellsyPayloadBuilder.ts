@@ -41,9 +41,11 @@ export const buildEstimatePayload = async (project: ProjectData, clientId: strin
         ? project.activePhases
         : getStandardPhases(project.nbPhases);
 
-    // If existingBreakdown is passed (from UI with manual edits), use it. 
-    // Otherwise calculate it from scratch.
-    const breakdown = existingBreakdown || calculateBreakdown(solution.priceFinal, project.typologies, activePhases);
+    // If existingBreakdown is passed (from UI with manual edits) AND has items, use it. 
+    // Otherwise calculate it from scratch to ensure we don't send empty rows if calculation failed in UI.
+    const breakdown = (existingBreakdown && existingBreakdown.length > 0)
+        ? existingBreakdown
+        : calculateBreakdown(solution.priceFinal, project.typologies, activePhases);
 
     // Get Tax ID for 20% - For the builder we assume 0 or passed via config if needed. 
     // Testing getTaxId here would require dependency injection for fetching from API.

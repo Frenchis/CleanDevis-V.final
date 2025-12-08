@@ -53,6 +53,12 @@ export interface Solution {
   range: { min: number; max: number };
 }
 
+
+export interface PhaseItem {
+  id: string; // Unique UUID
+  type: Phase;
+}
+
 export interface ProjectData {
   id: string;
   name: string;
@@ -66,7 +72,7 @@ export interface ProjectData {
   nbPhases: number;
   typologies: TypologyCount;
   surfaceArea?: number; // Optional surface area
-  activePhases: string[];
+  activePhases: PhaseItem[]; // Updated to support duplicates
   complexity: ComplexityParams;
   selectedSolution: Solution | null;
 }

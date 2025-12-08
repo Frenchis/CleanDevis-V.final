@@ -232,10 +232,12 @@ export const findConvergentSolutions = (
   return solutions.sort((a, b) => a.priceFinal - b.priceFinal);
 };
 
+import { PhaseItem } from '../types';
+
 export const calculateBreakdown = (
   totalPrice: number,
   typologies: TypologyCount,
-  activePhases: string[]
+  activePhases: PhaseItem[] | string[]
 ): BreakdownItem[] => {
 
   const config = getConfig();
@@ -253,11 +255,21 @@ export const calculateBreakdown = (
   if (totalWeight === 0) totalWeight = 1;
 
   let totalPhaseWeight = 0;
-  activePhases.forEach(p => {
-    totalPhaseWeight += PHASE_WEIGHTS[p as keyof typeof PHASE_WEIGHTS] || 0;
+
+  // Helper to normalize input
+  const normalizedPhases: PhaseItem[] = activePhases.map((p, i) => {
+    if (typeof p === 'string') {
+      return { id: `legacy-${p}-${i}`, type: p as any };
+    }
+    return p;
   });
 
-  const breakdown: BreakdownItem[] = activePhases.map((phaseName, index) => {
+  normalizedPhases.forEach(p => {
+    totalPhaseWeight += PHASE_WEIGHTS[p.type as keyof typeof PHASE_WEIGHTS] || 0;
+  });
+
+  const breakdown: BreakdownItem[] = normalizedPhases.map((item, index) => {
+    const phaseName = item.type;
     const pWeight = PHASE_WEIGHTS[phaseName as keyof typeof PHASE_WEIGHTS] || 0;
     const phaseTotal = totalPrice * (pWeight / totalPhaseWeight);
 
@@ -271,7 +283,7 @@ export const calculateBreakdown = (
     });
 
     return {
-      id: `${phaseName}-${index}`, // Unique ID based on phase name and position
+      id: item.id, // Use the persistent UUID from the PhaseItem
       phase: phaseName,
       totalPhase: phaseTotal,
       typologies: typoPrices

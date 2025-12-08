@@ -1,5 +1,5 @@
 
-import { ProjectData, GlobalConfig, TypologyCount, Phase } from '../types';
+import { ProjectData, GlobalConfig, TypologyCount, Phase, PhaseItem } from '../types';
 import { getHeaders } from './sellsyService';
 import { getConfig } from './calculationService';
 
@@ -49,11 +49,10 @@ export const importEstimateFromSellsy = async (estimateId: number): Promise<Part
         }
 
         // Parsing Logic
-        const activePhases: string[] = [];
+        const activePhases: PhaseItem[] = []; // Fix: Use PhaseItem[]
         const typologies: TypologyCount = { T1: 0, T2: 0, T3: 0, T4: 0, T5: 0, Autre: 0 };
         let currentPhase: Phase | null = null;
-        let surfaceTotal = 0; // Won't be accurate but init
-        let totalLogements = 0; // Won't be accurate
+        let totalAmount = 0; // Track total price
 
         // Updated Regex to be more permissive (User data: "Vitrerie T2 :")
         // Use word boundary to avoid matching "T2" inside other words if any.
@@ -75,6 +74,11 @@ export const importEstimateFromSellsy = async (estimateId: number): Promise<Part
         (estimate.rows as SellsyRow[]).forEach((row, idx) => {
             const cleanDesc = row.description ? extractTextFromHtml(row.description) : '';
 
+            // Calculate Row Total
+            const qty = parseFloat(row.quantity || '0');
+            const unit = parseFloat(row.unit_amount || '0');
+            totalAmount += qty * unit;
+
             let linePhase: Phase | null = null;
             if (row.reference && codeToPhase[row.reference]) {
                 linePhase = codeToPhase[row.reference];
@@ -88,14 +92,19 @@ export const importEstimateFromSellsy = async (estimateId: number): Promise<Part
                 const phase = detectPhaseFromText(cleanDesc);
                 if (phase) {
                     currentPhase = phase;
-                    if (!activePhases.includes(phase)) activePhases.push(phase);
+                    // Add phase if not already present (using type check)
+                    if (!activePhases.some(p => p.type === phase)) {
+                        activePhases.push({ id: crypto.randomUUID(), type: phase });
+                    }
                 }
             }
 
             // If this line determines a phase (via ref), set it as current context
             if (linePhase) {
                 currentPhase = linePhase;
-                if (!activePhases.includes(linePhase)) activePhases.push(linePhase);
+                if (!activePhases.some(p => p.type === linePhase)) {
+                    activePhases.push({ id: crypto.randomUUID(), type: linePhase });
+                }
             }
 
             // Check for Line Item (Typology)
@@ -124,13 +133,47 @@ export const importEstimateFromSellsy = async (estimateId: number): Promise<Part
             }
         });
 
+        let sellsyClientId = '';
+        let sellsyClientType: 'company' | 'individual' = 'company';
+        let clientName = '';
+
+        // Extract Client Info
+        if (estimate.related && estimate.related.length > 0) {
+            const client = estimate.related.find((r: any) => r.type === 'company' || r.type === 'individual' || r.type === 'person');
+            if (client) {
+                sellsyClientId = client.id;
+                sellsyClientType = client.type === 'person' ? 'individual' : client.type;
+            }
+        } else if (estimate.client) {
+            sellsyClientId = estimate.client.id;
+            sellsyClientType = estimate.client.type === 'person' ? 'individual' : estimate.client.type;
+        }
+
+        // Try to get client name
+        if (estimate.third_name) clientName = estimate.third_name;
+        else if (estimate.client_name) clientName = estimate.client_name;
+
         const projectData: Partial<ProjectData> = {
             name: estimate.subject || `Import Sellsy ${estimateId}`,
+            client: clientName,
+            sellsyClientId: sellsyClientId,
+            sellsyClientType: sellsyClientType,
             activePhases: activePhases,
             typologies: typologies,
             nbPhases: activePhases.length,
             // We can't recover solution details, so we might need a "Custom/Imported" mode
             // For now we assume the user will adjust.
+            // Reconstruct a "Manual" solution with the imported price
+            selectedSolution: {
+                id: 'import',
+                priceRaw: totalAmount,
+                priceFinal: totalAmount,
+                convergenceScore: 100,
+                days: 0,
+                methods: [],
+                explanation: "Prix Importé Sellsy",
+                range: { min: totalAmount, max: totalAmount }
+            }
         };
 
         return projectData;
