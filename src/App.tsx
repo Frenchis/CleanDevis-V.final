@@ -14,6 +14,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { AdminRoute } from './components/AdminRoute';
 import { ToastProvider } from './components/ui/Toast';
 import { ConfirmProvider } from './components/ui/ConfirmModal';
+import { Analytics } from "@vercel/analytics/react"
 
 function App() {
   return (
@@ -52,6 +53,7 @@ function App() {
             />
           </Routes>
         </Router>
+        <Analytics />
       </ConfirmProvider>
     </ToastProvider>
   );
