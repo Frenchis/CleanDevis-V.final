@@ -40,11 +40,26 @@ export const ImportPreviewModal: React.FC<ImportPreviewModalProps> = ({
 
     const togglePhase = (phase: string) => {
         if (!data.activePhases) return;
-        const newPhases = data.activePhases.includes(phase)
-            ? data.activePhases.filter(p => p !== phase)
-            : [...data.activePhases, phase];
 
-        setData({ ...data, activePhases: newPhases, nbPhases: newPhases.length });
+        // Check if phase is present (handling both string and PhaseItem for safety)
+        const isPresent = data.activePhases.some(p =>
+            (typeof p === 'string' ? p === phase : p.type === phase)
+        );
+
+        let newPhases;
+        if (isPresent) {
+            // Remove all instances of this phase
+            newPhases = data.activePhases.filter(p =>
+                (typeof p === 'string' ? p !== phase : p.type !== phase)
+            );
+        } else {
+            // Add new instance
+            // Need UUID for PhaseItem
+            const newItem = { id: crypto.randomUUID(), type: phase as Phase };
+            newPhases = [...data.activePhases, newItem];
+        }
+
+        setData({ ...data, activePhases: newPhases as any, nbPhases: newPhases.length });
     };
 
     const allPhases = Object.values(Phase);
@@ -87,7 +102,12 @@ export const ImportPreviewModal: React.FC<ImportPreviewModalProps> = ({
                         <label className="text-xs font-medium text-indigo-300 uppercase tracking-wider mb-3 block">Phases Détectées</label>
                         <div className="grid grid-cols-2 gap-3">
                             {allPhases.map((phase) => {
-                                const isActive = data.activePhases?.includes(phase);
+                                // Count instances
+                                const count = data.activePhases?.filter(p =>
+                                    (typeof p === 'string' ? p === phase : p.type === phase)
+                                ).length || 0;
+                                const isActive = count > 0;
+
                                 return (
                                     <div
                                         key={phase}
@@ -100,7 +120,12 @@ export const ImportPreviewModal: React.FC<ImportPreviewModalProps> = ({
                                             }
                     `}
                                     >
-                                        <span className="font-medium">{phase}</span>
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-medium">{phase}</span>
+                                            {count > 1 && (
+                                                <span className="text-xs bg-indigo-500 text-white px-1.5 py-0.5 rounded-full">x{count}</span>
+                                            )}
+                                        </div>
                                         {isActive && <Check className="w-4 h-4 text-indigo-400" />}
                                     </div>
                                 );
