@@ -131,6 +131,41 @@ export const Matrix = () => {
                             />
                         </div>
                     </div>
+
+                    {/* Convergence Summary - Results */}
+                    <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-700">
+                        <h4 className="flex items-center gap-2 text-sm font-bold text-violet-700 dark:text-violet-300 uppercase tracking-wider mb-4">
+                            <Info className="w-4 h-4" />
+                            Résultats
+                        </h4>
+                        <div className="flex flex-col gap-6">
+                            <div className="">
+                                <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">Convergence Surface</div>
+                                <div className="text-3xl font-bold text-slate-900 dark:text-white">
+                                    {matrixSurface.bestCell.ecart !== Infinity
+                                        ? `${Math.round((matrixSurface.bestCell.prixProd + matrixSurface.bestCell.prixMarche) / 2).toLocaleString('fr-FR')} €`
+                                        : '---'}
+                                </div>
+                                <div className="text-xs text-violet-600 dark:text-violet-400 mt-1 font-medium">
+                                    soit ~{Math.round((matrixSurface.bestCell.prixProd + matrixSurface.bestCell.prixMarche) / 2 / (nbLogements || 1)).toLocaleString('fr-FR')} € / logt
+                                </div>
+                            </div>
+
+                            {matrixLogement && (
+                                <div className="pt-6 border-t border-dashed border-slate-200 dark:border-slate-700">
+                                    <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">Convergence Logement</div>
+                                    <div className="text-3xl font-bold text-slate-900 dark:text-white">
+                                        {matrixLogement.bestCell.ecart !== Infinity
+                                            ? `${Math.round((matrixLogement.bestCell.prixProd + matrixLogement.bestCell.prixMarche) / 2).toLocaleString('fr-FR')} €`
+                                            : '---'}
+                                    </div>
+                                    <div className="text-xs text-violet-600 dark:text-violet-400 mt- font-medium">
+                                        soit ~{Math.round((matrixLogement.bestCell.prixProd + matrixLogement.bestCell.prixMarche) / 2 / (nbLogements || 1)).toLocaleString('fr-FR')} € / logt
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </div>
 
                 {/* MATRICES DISPLAY SECTION */}
@@ -241,39 +276,7 @@ export const Matrix = () => {
                         )}
                     </div>
 
-                    {/* Convergence Summary */}
-                    <div className="mt-8 p-6 bg-violet-500/5 rounded-2xl border border-violet-500/10">
-                        <h4 className="flex items-center gap-2 text-sm font-bold text-violet-700 dark:text-violet-300 uppercase tracking-wider mb-4">
-                            <Info className="w-4 h-4" />
-                            Résultats de la Convergence
-                        </h4>
-                        <div className="flex flex-wrap justify-center sm:justify-start gap-8">
-                            <div className="">
-                                <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">Convergence Surface</div>
-                                <div className="text-2xl font-bold text-slate-900 dark:text-white">
-                                    {matrixSurface.bestCell.ecart !== Infinity
-                                        ? `${Math.round((matrixSurface.bestCell.prixProd + matrixSurface.bestCell.prixMarche) / 2).toLocaleString('fr-FR')} €`
-                                        : '---'}
-                                </div>
-                                <div className="text-xs text-violet-600 dark:text-violet-400 mt-1">
-                                    soit ~{Math.round((matrixSurface.bestCell.prixProd + matrixSurface.bestCell.prixMarche) / 2 / (nbLogements || 1)).toLocaleString('fr-FR')} € / logt
-                                </div>
-                            </div>
-                            {matrixLogement && (
-                                <div className="pl-0 sm:pl-8 sm:border-l border-slate-200 dark:border-slate-700">
-                                    <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">Convergence Logement</div>
-                                    <div className="text-2xl font-bold text-slate-900 dark:text-white">
-                                        {matrixLogement.bestCell.ecart !== Infinity
-                                            ? `${Math.round((matrixLogement.bestCell.prixProd + matrixLogement.bestCell.prixMarche) / 2).toLocaleString('fr-FR')} €`
-                                            : '---'}
-                                    </div>
-                                    <div className="text-xs text-violet-600 dark:text-violet-400 mt-1">
-                                        soit ~{Math.round((matrixLogement.bestCell.prixProd + matrixLogement.bestCell.prixMarche) / 2 / (nbLogements || 1)).toLocaleString('fr-FR')} € / logt
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
+
 
                 </div>
             </div>
