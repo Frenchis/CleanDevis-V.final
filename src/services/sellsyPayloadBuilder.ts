@@ -70,7 +70,8 @@ export const buildEstimatePayload = async (project: ProjectData, clientId: strin
         const productCode = config.sellsy?.productMapping?.[phaseName as Phase] || 'GENERIC_SERVICE';
 
         let hasTypologies = false;
-        Object.entries(phaseItem.typologies).forEach(([type, price]) => {
+        Object.entries(phaseItem.typologies).forEach(([type, priceValue]) => {
+            const price = priceValue as number;
             const count = project.typologies[type as keyof typeof project.typologies] || 0;
             if (count > 0) {
                 hasTypologies = true;

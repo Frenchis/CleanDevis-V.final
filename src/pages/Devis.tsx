@@ -30,7 +30,7 @@ export const Devis = () => {
   // We now maintain local state for typologies and phases to allow standalone usage
   const [typologies, setTypologies] = useState<TypologyCount>(DEFAULT_TYPOLOGIES);
   const [surfaceArea, setSurfaceArea] = useState<number>(0);
-  const [activePhases, setActivePhases] = useState<string[]>([]); // Default for standalone
+  const [activePhases, setActivePhases] = useState<PhaseItem[]>([]); // Default for standalone
   const [targetPrice, setTargetPrice] = useState<number>(0);
   const [breakdown, setBreakdown] = useState<BreakdownItem[]>([]);
   const [calculatedTotal, setCalculatedTotal] = useState<number>(0);
