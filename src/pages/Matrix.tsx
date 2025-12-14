@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Grid3X3, Building, TrendingUp, Info, Settings, LayoutDashboard } from 'lucide-react';
 import gsap from 'gsap';
 import { Tooltip } from '../components/ui/Tooltip';
-import { MatrixSettingsModal } from '../components/MatrixSettingsModal';
+import { MatrixSettingsModal, RangeConfig } from '../components/MatrixSettingsModal';
 
 export const Matrix = () => {
     // State for Inputs
@@ -13,8 +13,14 @@ export const Matrix = () => {
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
     // Matrix Parameters State (Configurable)
+    // We store both the config (for the modal) and the generated values (for the table)
+    const [prixM2Config, setPrixM2Config] = useState<RangeConfig>({ min: 1, max: 4, step: 0.5 });
     const [prixM2Values, setPrixM2Values] = useState<number[]>([1, 1.5, 2, 2.5, 3, 3.5, 4]);
+
+    const [m2JourConfig, setM2JourConfig] = useState<RangeConfig>({ min: 200, max: 400, step: 100 });
     const [m2JourValues, setM2JourValues] = useState<number[]>([200, 300, 400]);
+
+    const [logementsJourConfig, setLogementsJourConfig] = useState<RangeConfig>({ min: 5, max: 7, step: 1 });
     const [logementsJourValues, setLogementsJourValues] = useState<number[]>([5, 6, 7]);
 
     // GSAP Animations
@@ -67,6 +73,21 @@ export const Matrix = () => {
 
     const matrixSurface = generateMatrixData('surface');
     const matrixLogement = nbLogements > 0 ? generateMatrixData('logement') : null;
+
+    const handleSaveConfigs = (
+        prixM2: { config: RangeConfig, values: number[] },
+        m2Jour: { config: RangeConfig, values: number[] },
+        logementsJour: { config: RangeConfig, values: number[] }
+    ) => {
+        setPrixM2Config(prixM2.config);
+        setPrixM2Values(prixM2.values);
+
+        setM2JourConfig(m2Jour.config);
+        setM2JourValues(m2Jour.values);
+
+        setLogementsJourConfig(logementsJour.config);
+        setLogementsJourValues(logementsJour.values);
+    };
 
     return (
         <div className="p-4 md:p-6 max-w-[1920px] mx-auto space-y-6">
@@ -392,12 +413,10 @@ export const Matrix = () => {
             <MatrixSettingsModal
                 isOpen={isSettingsOpen}
                 onClose={() => setIsSettingsOpen(false)}
-                prixM2Values={prixM2Values}
-                setPrixM2Values={setPrixM2Values}
-                m2JourValues={m2JourValues}
-                setM2JourValues={setM2JourValues}
-                logementsJourValues={logementsJourValues}
-                setLogementsJourValues={setLogementsJourValues}
+                prixM2Config={prixM2Config}
+                m2JourConfig={m2JourConfig}
+                logementsJourConfig={logementsJourConfig}
+                onSaveConfigs={handleSaveConfigs}
             />
         </div>
     );
