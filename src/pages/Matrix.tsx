@@ -90,19 +90,20 @@ export const Matrix = () => {
     }, []);
 
     // Calculate matrix data
-    const surfaceTotale = surface * phases;
-    const totalUnits = nbLogements * phases;
+    // NOTE: Calculations are now based on PER PHASE quantities as requested
+    const targetSurface = surface;
+    const targetUnits = nbLogements;
 
     const generateMatrixData = (type: 'surface' | 'logement') => {
         const values = type === 'surface' ? m2JourValues : logementsJourValues;
         let bestCell = { ecart: Infinity, row: 0, col: 0, prixProd: 0, prixMarche: 0 };
 
         const rows = prixM2Values.map((pM2, rowIdx) => {
-            const prixMarche = surfaceTotale * pM2;
+            const prixMarche = targetSurface * pM2;
             const cells = values.map((val, colIdx) => {
                 const nbJours = type === 'surface'
-                    ? (val > 0 ? surfaceTotale / val : Infinity)
-                    : (val > 0 ? totalUnits / val : Infinity);
+                    ? (val > 0 ? targetSurface / val : Infinity)
+                    : (val > 0 ? targetUnits / val : Infinity);
                 const prixProd = nbJours * prixJour;
                 const ecart = prixMarche > 0 ? Math.abs((prixProd - prixMarche) / prixMarche * 100) : Infinity;
 
@@ -174,7 +175,7 @@ export const Matrix = () => {
                     </div>
                     <div>
                         <h1 className="text-xl font-bold text-slate-900 dark:text-white">Matrices de Convergence</h1>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">Rentabilité immédiate</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">Rentabilité immédiate (Par Phase)</p>
                     </div>
                 </div>
 
@@ -351,7 +352,7 @@ export const Matrix = () => {
                                                                             <span className="font-mono font-bold text-emerald-400">{cell.prixProd.toLocaleString('fr-FR')} €</span>
                                                                         </div>
                                                                         <div className="text-[10px] text-slate-500 pl-2 opacity-80">
-                                                                            (Surface totale / Cadence) x Prix Jour
+                                                                            ({targetSurface.toLocaleString('fr-FR')} m² / Cadence) x Prix Jour
                                                                         </div>
                                                                     </div>
                                                                     <div className="space-y-1">
@@ -360,7 +361,7 @@ export const Matrix = () => {
                                                                             <span className="font-mono font-bold text-violet-400">{cell.prixMarche.toLocaleString('fr-FR')} €</span>
                                                                         </div>
                                                                         <div className="text-[10px] text-slate-500 pl-2 opacity-80">
-                                                                            (Surface totale x Prix M2)
+                                                                            ({targetSurface.toLocaleString('fr-FR')} m² x Prix M2)
                                                                         </div>
                                                                     </div>
                                                                     <div className="pt-2 border-t border-slate-700 flex justify-between gap-4">
@@ -438,7 +439,7 @@ export const Matrix = () => {
                                                                                 <span className="font-mono font-bold text-emerald-400">{cell.prixProd.toLocaleString('fr-FR')} €</span>
                                                                             </div>
                                                                             <div className="text-[10px] text-slate-500 pl-2 opacity-80">
-                                                                                (Nb Logts / Cadence) x Prix Jour
+                                                                                ({targetUnits.toLocaleString('fr-FR')} u / Cadence) x Prix Jour
                                                                             </div>
                                                                         </div>
                                                                         <div className="space-y-1">
@@ -447,7 +448,7 @@ export const Matrix = () => {
                                                                                 <span className="font-mono font-bold text-violet-400">{cell.prixMarche.toLocaleString('fr-FR')} €</span>
                                                                             </div>
                                                                             <div className="text-[10px] text-slate-500 pl-2 opacity-80">
-                                                                                (Surface totale x Prix M2)
+                                                                                ({targetSurface.toLocaleString('fr-FR')} m² x Prix M2)
                                                                             </div>
                                                                         </div>
                                                                         <div className="pt-2 border-t border-slate-700 flex justify-between gap-4">
