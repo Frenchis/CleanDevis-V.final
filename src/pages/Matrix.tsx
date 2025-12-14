@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Grid3X3, Building, TrendingUp, Info } from 'lucide-react';
 import gsap from 'gsap';
+import { Tooltip } from '../components/ui/Tooltip';
 
 export const Matrix = () => {
     // State for Inputs
@@ -49,7 +50,12 @@ export const Matrix = () => {
                     bestCell = { ecart, row: rowIdx, col: colIdx, prixProd, prixMarche };
                 }
 
-                return { prixProd: Math.round(prixProd), ecart, prixM2: pM2 };
+                return {
+                    prixProd: Math.round(prixProd),
+                    prixMarche: Math.round(prixMarche),
+                    ecart,
+                    prixM2: pM2
+                };
             });
             return { prixM2: pM2, cells };
         });
@@ -219,9 +225,54 @@ export const Matrix = () => {
                                                             ? 'bg-amber-100/80 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300'
                                                             : 'text-slate-500 dark:text-slate-500';
                                                     return (
-                                                        <td key={colIdx} className={`p-2 text-center border-b border-r border-slate-100 dark:border-slate-800 last:border-r-0 ${cellClass} ${isBest ? 'ring-2 ring-violet-500 ring-inset z-10 relative' : ''}`}>
-                                                            <div className="font-bold text-xs">{cell.prixProd.toLocaleString('fr-FR')} €</div>
-                                                            <div className="text-[10px] opacity-70 scale-90">Écart: {cell.ecart.toFixed(1)}%</div>
+                                                        <td
+                                                            key={colIdx}
+                                                            className={`p-0 text-center border-b border-r border-slate-100 dark:border-slate-800 last:border-r-0 ${cellClass} ${isBest ? 'ring-2 ring-violet-500 ring-inset z-10 relative' : ''}`}
+                                                        >
+                                                            <Tooltip
+                                                                className="min-w-[200px]"
+                                                                content={
+                                                                    <div className="space-y-2">
+                                                                        <div className="font-bold border-b border-slate-700 pb-1 mb-1">Détails du calcul</div>
+                                                                        <div className="space-y-1">
+                                                                            <div className="flex justify-between gap-4">
+                                                                                <span className="text-slate-400">Production (Cadence):</span>
+                                                                                <span className="font-mono font-bold text-emerald-400">{cell.prixProd.toLocaleString('fr-FR')} €</span>
+                                                                            </div>
+                                                                            <div className="text-[10px] text-slate-500 pl-2 opacity-80">
+                                                                                (Surface totale / Cadence) x Prix Jour
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="space-y-1">
+                                                                            <div className="flex justify-between gap-4">
+                                                                                <span className="text-slate-400">Cible (Marché):</span>
+                                                                                <span className="font-mono font-bold text-violet-400">{cell.prixMarche.toLocaleString('fr-FR')} €</span>
+                                                                            </div>
+                                                                            <div className="text-[10px] text-slate-500 pl-2 opacity-80">
+                                                                                (Surface totale x Prix M2)
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="pt-2 border-t border-slate-700 flex justify-between gap-4">
+                                                                            <span className="text-slate-300">Écart:</span>
+                                                                            <span className={`font-bold ${cell.ecart <= 10 ? 'text-emerald-400' : cell.ecart <= 20 ? 'text-amber-400' : 'text-red-400'}`}>
+                                                                                {cell.ecart.toFixed(1)}%
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+                                                                }
+                                                            >
+                                                                <div className="p-2 h-full flex flex-col items-center justify-center gap-0.5">
+                                                                    <div className="font-bold text-xs">
+                                                                        {cell.prixProd.toLocaleString('fr-FR')} €
+                                                                    </div>
+                                                                    <div className="text-[10px] opacity-60">
+                                                                        vs {cell.prixMarche.toLocaleString('fr-FR')}
+                                                                    </div>
+                                                                    <div className="text-[10px] font-medium opacity-90 scale-90">
+                                                                        {cell.ecart.toFixed(1)}%
+                                                                    </div>
+                                                                </div>
+                                                            </Tooltip>
                                                         </td>
                                                     );
                                                 })}
@@ -261,9 +312,54 @@ export const Matrix = () => {
                                                                 ? 'bg-amber-100/80 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300'
                                                                 : 'text-slate-500 dark:text-slate-500';
                                                         return (
-                                                            <td key={colIdx} className={`p-2 text-center border-b border-r border-slate-100 dark:border-slate-800 last:border-r-0 ${cellClass} ${isBest ? 'ring-2 ring-violet-500 ring-inset z-10 relative' : ''}`}>
-                                                                <div className="font-bold text-xs">{cell.prixProd.toLocaleString('fr-FR')} €</div>
-                                                                <div className="text-[10px] opacity-70 scale-90">Écart: {cell.ecart.toFixed(1)}%</div>
+                                                            <td
+                                                                key={colIdx}
+                                                                className={`p-0 text-center border-b border-r border-slate-100 dark:border-slate-800 last:border-r-0 ${cellClass} ${isBest ? 'ring-2 ring-violet-500 ring-inset z-10 relative' : ''}`}
+                                                            >
+                                                                <Tooltip
+                                                                    className="min-w-[200px]"
+                                                                    content={
+                                                                        <div className="space-y-2">
+                                                                            <div className="font-bold border-b border-slate-700 pb-1 mb-1">Détails du calcul</div>
+                                                                            <div className="space-y-1">
+                                                                                <div className="flex justify-between gap-4">
+                                                                                    <span className="text-slate-400">Production (Logts):</span>
+                                                                                    <span className="font-mono font-bold text-emerald-400">{cell.prixProd.toLocaleString('fr-FR')} €</span>
+                                                                                </div>
+                                                                                <div className="text-[10px] text-slate-500 pl-2 opacity-80">
+                                                                                    (Nb Logts / Cadence) x Prix Jour
+                                                                                </div>
+                                                                            </div>
+                                                                            <div className="space-y-1">
+                                                                                <div className="flex justify-between gap-4">
+                                                                                    <span className="text-slate-400">Cible (Marché):</span>
+                                                                                    <span className="font-mono font-bold text-violet-400">{cell.prixMarche.toLocaleString('fr-FR')} €</span>
+                                                                                </div>
+                                                                                <div className="text-[10px] text-slate-500 pl-2 opacity-80">
+                                                                                    (Surface totale x Prix M2)
+                                                                                </div>
+                                                                            </div>
+                                                                            <div className="pt-2 border-t border-slate-700 flex justify-between gap-4">
+                                                                                <span className="text-slate-300">Écart:</span>
+                                                                                <span className={`font-bold ${cell.ecart <= 10 ? 'text-emerald-400' : cell.ecart <= 20 ? 'text-amber-400' : 'text-red-400'}`}>
+                                                                                    {cell.ecart.toFixed(1)}%
+                                                                                </span>
+                                                                            </div>
+                                                                        </div>
+                                                                    }
+                                                                >
+                                                                    <div className="p-2 h-full flex flex-col items-center justify-center gap-0.5">
+                                                                        <div className="font-bold text-xs">
+                                                                            {cell.prixProd.toLocaleString('fr-FR')} €
+                                                                        </div>
+                                                                        <div className="text-[10px] opacity-60">
+                                                                            vs {cell.prixMarche.toLocaleString('fr-FR')}
+                                                                        </div>
+                                                                        <div className="text-[10px] font-medium opacity-90 scale-90">
+                                                                            {cell.ecart.toFixed(1)}%
+                                                                        </div>
+                                                                    </div>
+                                                                </Tooltip>
                                                             </td>
                                                         );
                                                     })}
