@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Sidebar, SidebarBody, SidebarLink } from '@/components/ui/sidebar';
+import { Sidebar, SidebarBody, SidebarLink, useSidebar } from '@/components/ui/sidebar';
 import { AnimatedThemeToggler } from '@/components/ui/animated-theme-toggler';
 import {
   LayoutDashboard,
@@ -15,7 +15,8 @@ import {
   Shield,
   CloudLightning,
   FileText,
-  BookOpen
+  BookOpen,
+  Grid3X3
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'motion/react';
@@ -24,6 +25,27 @@ import { isUserAdmin } from '@/lib/constants';
 interface LayoutProps {
   children: React.ReactNode;
 }
+
+const SidebarSection = ({ title, children }: { title: string; children: React.ReactNode }) => {
+  const { open, animate } = useSidebar();
+  return (
+    <div className="mb-4">
+      <motion.div
+        animate={{
+          opacity: animate ? (open ? 1 : 0) : 1,
+          height: animate ? (open ? "auto" : 0) : "auto",
+          marginBottom: animate ? (open ? 8 : 0) : 8
+        }}
+        className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider px-2 overflow-hidden truncate h-6"
+      >
+        {title}
+      </motion.div>
+      <div className="flex flex-col gap-1">
+        {children}
+      </div>
+    </div>
+  );
+};
 
 const Logo = () => {
   return (
@@ -58,56 +80,31 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   // Theme logic is handled by AnimatedThemeToggler
 
-  const links = [
+  /* Structured Link Groups */
+  const linkGroups = [
     {
-      label: "Accueil",
-      href: "/",
-      icon: (
-        <LayoutDashboard className="h-5 w-5 shrink-0" />
-      ),
+      title: "Navigation",
+      items: [
+        { label: "Accueil", href: "/", icon: <LayoutDashboard className="h-5 w-5 shrink-0" /> },
+        { label: "Historique", href: "/history", icon: <History className="h-5 w-5 shrink-0" /> },
+      ]
     },
     {
-      label: "Calculateur",
-      href: "/calculator",
-      icon: (
-        <Calculator className="h-5 w-5 shrink-0" />
-      ),
+      title: "Chiffrage",
+      items: [
+        { label: "Calculateur", href: "/calculator", icon: <Calculator className="h-5 w-5 shrink-0" /> },
+        { label: "Matrices", href: "/matrix", icon: <Grid3X3 className="h-5 w-5 shrink-0" /> },
+        { label: "Devis", href: "/devis", icon: <CloudLightning className="h-5 w-5 shrink-0" /> },
+        { label: "Modèles", href: "/templates", icon: <FileText className="h-5 w-5 shrink-0" /> },
+      ]
     },
     {
-      label: "Devis",
-      href: "/devis",
-      icon: (
-        <CloudLightning className="h-5 w-5 shrink-0" />
-      ),
-    },
-    {
-      label: "Modèles",
-      href: "/templates",
-      icon: (
-        <FileText className="h-5 w-5 shrink-0" />
-      ),
-    },
-    {
-      label: "Historique",
-      href: "/history",
-      icon: (
-        <History className="h-5 w-5 shrink-0" />
-      ),
-    },
-    {
-      label: "Configuration",
-      href: "/settings",
-      icon: (
-        <Settings className="h-5 w-5 shrink-0" />
-      ),
-    },
-    {
-      label: "Guide",
-      href: "/guide",
-      icon: (
-        <BookOpen className="h-5 w-5 shrink-0" />
-      ),
-    },
+      title: "Paramètres",
+      items: [
+        { label: "Configuration", href: "/settings", icon: <Settings className="h-5 w-5 shrink-0" /> },
+        { label: "Guide", href: "/guide", icon: <BookOpen className="h-5 w-5 shrink-0" /> },
+      ]
+    }
   ];
 
   // Add Admin link if user is admin
@@ -127,12 +124,10 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   }, []);
 
   if (isAdmin) {
-    links.push({
+    linkGroups[2].items.push({
       label: "Administration",
       href: "/admin",
-      icon: (
-        <Shield className="text-red-500 h-5 w-5 shrink-0" />
-      ),
+      icon: <Shield className="text-red-500 h-5 w-5 shrink-0" />
     });
   }
 
@@ -145,9 +140,13 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         <SidebarBody className="justify-between gap-10">
           <div className="flex flex-1 flex-col overflow-x-hidden overflow-y-auto">
             {open ? <Logo /> : <LogoIcon />}
-            <div className="mt-8 flex flex-col gap-2">
-              {links.map((link, idx) => (
-                <SidebarLink key={idx} link={link} />
+            <div className="mt-8 flex flex-col gap-6">
+              {linkGroups.map((group, idx) => (
+                <SidebarSection key={idx} title={group.title}>
+                  {group.items.map(link => (
+                    <SidebarLink key={link.href} link={link} />
+                  ))}
+                </SidebarSection>
               ))}
             </div>
           </div>

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, ReferenceLine
 } from 'recharts';
-import { Sliders, Calculator as CalcIcon, AlertCircle, ArrowRight, Save, Info, TrendingUp, TrendingDown, Grid3X3 } from 'lucide-react';
+import { Sliders, Calculator as CalcIcon, AlertCircle, ArrowRight, Save, Info, TrendingUp, TrendingDown } from 'lucide-react';
 import gsap from 'gsap';
 import { ProjectData, TypologyCount, ComplexityParams, Solution, Phase, PhaseItem } from '../types';
 import { findConvergentSolutions, calculateComplexityMultiplier } from '../services/calculationService';
@@ -63,43 +63,7 @@ export const Calculator = () => {
   const [solutions, setSolutions] = useState<Solution[]>([]);
   const [selectedSolutionId, setSelectedSolutionId] = useState<string | null>(null);
 
-  // Matrix Parameters
-  const [prixJour, setPrixJour] = useState<number>(840);
-  const PRIX_M2_VALUES = [1, 1.5, 2, 2.5, 3, 3.5, 4];
-  const M2_JOUR_VALUES = [200, 300, 400];
-  const LOGEMENTS_JOUR_VALUES = [5, 6, 7];
 
-  // Calculate matrix data
-  const surfaceTotale = surface * phases;
-  const totalUnits = nbLogements * phases;
-
-  const generateMatrixData = (type: 'surface' | 'logement') => {
-    const values = type === 'surface' ? M2_JOUR_VALUES : LOGEMENTS_JOUR_VALUES;
-    let bestCell = { ecart: Infinity, row: 0, col: 0, prixProd: 0, prixMarche: 0 };
-
-    const rows = PRIX_M2_VALUES.map((pM2, rowIdx) => {
-      const prixMarche = surfaceTotale * pM2;
-      const cells = values.map((val, colIdx) => {
-        const nbJours = type === 'surface'
-          ? (val > 0 ? surfaceTotale / val : Infinity)
-          : (val > 0 ? totalUnits / val : Infinity);
-        const prixProd = nbJours * prixJour;
-        const ecart = prixMarche > 0 ? Math.abs((prixProd - prixMarche) / prixMarche * 100) : Infinity;
-
-        if (ecart < bestCell.ecart) {
-          bestCell = { ecart, row: rowIdx, col: colIdx, prixProd, prixMarche };
-        }
-
-        return { prixProd: Math.round(prixProd), ecart, prixM2: pM2 };
-      });
-      return { prixM2: pM2, cells };
-    });
-
-    return { rows, bestCell, values };
-  };
-
-  const matrixSurface = generateMatrixData('surface');
-  const matrixLogement = nbLogements > 0 ? generateMatrixData('logement') : null;
 
   // GSAP Animations
   useEffect(() => {
@@ -489,146 +453,7 @@ export const Calculator = () => {
           </div>
         </div>
 
-        {/* 6. MATRICES DE CONVERGENCE - Full width */}
-        <div className="bento-item md:col-span-12 bg-white/60 dark:bg-brand-card/60 backdrop-blur-md border border-slate-200 dark:border-slate-700/50 rounded-3xl p-6 shadow-lg">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3 text-violet-500">
-              <div className="p-2 bg-violet-500/10 rounded-xl">
-                <Grid3X3 className="w-6 h-6" />
-              </div>
-              <h2 className="font-bold text-xl text-slate-900 dark:text-white">Matrices de Convergence</h2>
-            </div>
-            {/* Légende */}
-            <div className="flex items-center gap-4 text-xs">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded bg-emerald-100 dark:bg-emerald-900/50 border border-emerald-300 dark:border-emerald-700"></div>
-                <span className="text-slate-500">≤10% (Excellent)</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded bg-amber-100 dark:bg-amber-900/50 border border-amber-300 dark:border-amber-700"></div>
-                <span className="text-slate-500">10-20% (Bon)</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"></div>
-                <span className="text-slate-500">&gt;20%</span>
-              </div>
-            </div>
-          </div>
 
-          {/* Prix Jour Input */}
-          <div className="mb-6 flex items-center gap-4">
-            <label className="text-sm font-medium text-slate-500 dark:text-slate-400">Prix référence journée :</label>
-            <input
-              type="number"
-              value={prixJour}
-              onChange={(e) => setPrixJour(Number(e.target.value) || 0)}
-              className="w-24 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm font-bold text-slate-900 dark:text-white"
-            />
-            <span className="text-sm text-slate-500">€/jour</span>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Matrice A: Surface */}
-            <div>
-              <h3 className="text-sm font-bold text-violet-600 dark:text-violet-400 mb-3">Matrice Surface (€/m² vs m²/jour)</h3>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr>
-                      <th className="bg-violet-500 text-white p-2 rounded-tl-lg text-xs">€/m²</th>
-                      {matrixSurface.values.map(v => (
-                        <th key={v} className="bg-violet-500 text-white p-2 text-xs">{v} m²/j</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {matrixSurface.rows.map((row, rowIdx) => (
-                      <tr key={row.prixM2}>
-                        <td className="bg-violet-500 text-white p-2 font-bold text-center text-xs">{row.prixM2.toFixed(2)} €</td>
-                        {row.cells.map((cell, colIdx) => {
-                          const isBest = rowIdx === matrixSurface.bestCell.row && colIdx === matrixSurface.bestCell.col;
-                          const cellClass = cell.ecart <= 10
-                            ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300'
-                            : cell.ecart <= 20
-                              ? 'bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300'
-                              : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400';
-                          return (
-                            <td key={colIdx} className={`p-2 text-center border border-slate-200 dark:border-slate-700 ${cellClass} ${isBest ? 'ring-2 ring-violet-500 ring-inset' : ''}`}>
-                              <div className="font-bold text-xs">{cell.prixProd.toLocaleString('fr-FR')} €</div>
-                              <div className="text-[10px] opacity-70">Écart: {cell.ecart.toFixed(1)}%</div>
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Matrice B: Logement */}
-            {matrixLogement && (
-              <div>
-                <h3 className="text-sm font-bold text-violet-600 dark:text-violet-400 mb-3">Matrice Logement (€/m² vs log/jour)</h3>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr>
-                        <th className="bg-violet-500 text-white p-2 rounded-tl-lg text-xs">€/m²</th>
-                        {matrixLogement.values.map(v => (
-                          <th key={v} className="bg-violet-500 text-white p-2 text-xs">{v} log/j</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {matrixLogement.rows.map((row, rowIdx) => (
-                        <tr key={row.prixM2}>
-                          <td className="bg-violet-500 text-white p-2 font-bold text-center text-xs">{row.prixM2.toFixed(2)} €</td>
-                          {row.cells.map((cell, colIdx) => {
-                            const isBest = rowIdx === matrixLogement.bestCell.row && colIdx === matrixLogement.bestCell.col;
-                            const cellClass = cell.ecart <= 10
-                              ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300'
-                              : cell.ecart <= 20
-                                ? 'bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300'
-                                : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400';
-                            return (
-                              <td key={colIdx} className={`p-2 text-center border border-slate-200 dark:border-slate-700 ${cellClass} ${isBest ? 'ring-2 ring-violet-500 ring-inset' : ''}`}>
-                                <div className="font-bold text-xs">{cell.prixProd.toLocaleString('fr-FR')} €</div>
-                                <div className="text-[10px] opacity-70">Écart: {cell.ecart.toFixed(1)}%</div>
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Convergence Summary */}
-          <div className="mt-6 p-4 bg-violet-500/10 rounded-2xl border border-violet-500/20 flex flex-wrap justify-center gap-8">
-            <div className="text-center">
-              <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">Convergence Surface</div>
-              <div className="text-lg font-bold text-violet-600 dark:text-violet-400">
-                {matrixSurface.bestCell.ecart !== Infinity
-                  ? `${Math.round((matrixSurface.bestCell.prixProd + matrixSurface.bestCell.prixMarche) / 2).toLocaleString('fr-FR')} €`
-                  : '---'}
-              </div>
-            </div>
-            {matrixLogement && (
-              <div className="text-center">
-                <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">Convergence Logement</div>
-                <div className="text-lg font-bold text-violet-600 dark:text-violet-400">
-                  {matrixLogement.bestCell.ecart !== Infinity
-                    ? `${Math.round((matrixLogement.bestCell.prixProd + matrixLogement.bestCell.prixMarche) / 2).toLocaleString('fr-FR')} €`
-                    : '---'}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
 
       </div>
     </div>

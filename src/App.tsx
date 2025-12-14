@@ -3,6 +3,7 @@ import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { Layout } from './components/Layout';
 import { Dashboard } from './pages/Dashboard';
 import { Calculator } from './pages/Calculator';
+import { Matrix } from './pages/Matrix';
 import { Devis } from './pages/Devis';
 import { QuoteTemplates } from './pages/QuoteTemplates';
 import { History } from './pages/History';
@@ -32,6 +33,7 @@ function App() {
                     <Routes>
                       <Route path="/" element={<Dashboard />} />
                       <Route path="/calculator" element={<Calculator />} />
+                      <Route path="/matrix" element={<Matrix />} />
                       <Route path="/devis" element={<Devis />} />
                       <Route path="/templates" element={<QuoteTemplates />} />
                       <Route path="/history" element={<History />} />
