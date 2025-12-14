@@ -3,17 +3,32 @@ import { Grid3X3, Building, TrendingUp, Info, Settings, LayoutDashboard } from '
 import gsap from 'gsap';
 import { Tooltip } from '../components/ui/Tooltip';
 import { MatrixSettingsModal, RangeConfig } from '../components/MatrixSettingsModal';
+import { supabase } from '../lib/supabaseClient';
+import { useToast } from '../components/ui/Toast';
+
+// Helper to generate array from config
+const generateArray = (config: RangeConfig): number[] => {
+    const { min, max, step } = config;
+    if (step <= 0) return [];
+    const count = Math.floor((max - min) / step) + 1;
+    return Array.from({ length: count }, (_, i) => {
+        const val = min + (i * step);
+        return Math.round(val * 100) / 100;
+    });
+};
 
 export const Matrix = () => {
+    const toast = useToast();
+
     // State for Inputs
     const [nbLogements, setNbLogements] = useState<number>(15);
     const [surface, setSurface] = useState<number>(1500);
     const [phases, setPhases] = useState<number>(3);
     const [prixJour, setPrixJour] = useState<number>(840);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
     // Matrix Parameters State (Configurable)
-    // We store both the config (for the modal) and the generated values (for the table)
     const [prixM2Config, setPrixM2Config] = useState<RangeConfig>({ min: 1, max: 4, step: 0.5 });
     const [prixM2Values, setPrixM2Values] = useState<number[]>([1, 1.5, 2, 2.5, 3, 3.5, 4]);
 
@@ -22,6 +37,43 @@ export const Matrix = () => {
 
     const [logementsJourConfig, setLogementsJourConfig] = useState<RangeConfig>({ min: 5, max: 7, step: 1 });
     const [logementsJourValues, setLogementsJourValues] = useState<number[]>([5, 6, 7]);
+
+    // Load from Supabase on mount
+    useEffect(() => {
+        const loadMatrixConfig = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from('settings')
+                    .select('value')
+                    .eq('key', 'matrix_config')
+                    .single();
+
+                if (data && data.value) {
+                    const { prixM2, m2Jour, logementsJour } = data.value;
+
+                    if (prixM2) {
+                        setPrixM2Config(prixM2);
+                        setPrixM2Values(generateArray(prixM2));
+                    }
+                    if (m2Jour) {
+                        setM2JourConfig(m2Jour);
+                        setM2JourValues(generateArray(m2Jour));
+                    }
+                    if (logementsJour) {
+                        setLogementsJourConfig(logementsJour);
+                        setLogementsJourValues(generateArray(logementsJour));
+                    }
+                    console.log("Loaded Matrix Config from Supabase");
+                }
+            } catch (err) {
+                console.error("Error loading matrix settings:", err);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        loadMatrixConfig();
+    }, []);
 
     // GSAP Animations
     useEffect(() => {
@@ -74,11 +126,12 @@ export const Matrix = () => {
     const matrixSurface = generateMatrixData('surface');
     const matrixLogement = nbLogements > 0 ? generateMatrixData('logement') : null;
 
-    const handleSaveConfigs = (
+    const handleSaveConfigs = async (
         prixM2: { config: RangeConfig, values: number[] },
         m2Jour: { config: RangeConfig, values: number[] },
         logementsJour: { config: RangeConfig, values: number[] }
     ) => {
+        // Update Local State
         setPrixM2Config(prixM2.config);
         setPrixM2Values(prixM2.values);
 
@@ -87,6 +140,27 @@ export const Matrix = () => {
 
         setLogementsJourConfig(logementsJour.config);
         setLogementsJourValues(logementsJour.values);
+
+        // Save to Supabase
+        try {
+            const { error } = await supabase
+                .from('settings')
+                .upsert({
+                    key: 'matrix_config',
+                    value: {
+                        prixM2: prixM2.config,
+                        m2Jour: m2Jour.config,
+                        logementsJour: logementsJour.config
+                    },
+                    updated_at: new Date().toISOString()
+                }, { onConflict: 'key' });
+
+            if (error) throw error;
+            toast.success("Configuration matrice sauvegardée !");
+        } catch (err) {
+            console.error("Error saving matrix config:", err);
+            toast.error("Erreur de sauvegarde cloud.");
+        }
     };
 
     return (
@@ -172,7 +246,7 @@ export const Matrix = () => {
                     className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-violet-500 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all border border-slate-200 dark:border-slate-700"
                     title="Configurer les échelles de la matrice"
                 >
-                    <Settings className="w-5 h-5" />
+                    <Settings className={`w-5 h-5 ${isLoading ? 'animate-spin opacity-50' : ''}`} />
                 </button>
             </div>
 
