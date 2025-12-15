@@ -10,6 +10,7 @@ import { History } from './pages/History';
 import { Settings } from './pages/Settings';
 import { Login } from './pages/Login';
 import { Guide } from './pages/Guide';
+import { Changelog } from './pages/Changelog';
 import { Admin } from './pages/Admin';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AdminRoute } from './components/AdminRoute';
@@ -38,6 +39,7 @@ function App() {
                       <Route path="/templates" element={<QuoteTemplates />} />
                       <Route path="/history" element={<History />} />
                       <Route path="/guide" element={<Guide />} />
+                      <Route path="/changelog" element={<Changelog />} />
                       <Route path="/settings" element={<Settings />} />
                       <Route
                         path="/admin"

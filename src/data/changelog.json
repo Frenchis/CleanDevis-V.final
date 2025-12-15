@@ -1,0 +1,122 @@
+[
+    {
+        "hash": "04afaa7",
+        "date": "2025-12-15T21:46:09+01:00",
+        "author": "Jules Boullier",
+        "message": "Fix: Sellsy Template Export Logic"
+    },
+    {
+        "hash": "1586879",
+        "date": "2025-12-15T21:39:45+01:00",
+        "author": "Jules Boullier",
+        "message": "Feat: Integrate Quote Templates in Devis Phases & Reorder Inputs"
+    },
+    {
+        "hash": "cc9a6f9",
+        "date": "2025-12-15T21:29:19+01:00",
+        "author": "Jules Boullier",
+        "message": "Feat: Round prices in Devis grid and add Sellsy Client Reference support"
+    },
+    {
+        "hash": "a78a89b",
+        "date": "2025-12-15T21:19:10+01:00",
+        "author": "Jules Boullier",
+        "message": "Fix: Allow empty strings in numeric inputs to enable field clearing"
+    },
+    {
+        "hash": "d0ba2df",
+        "date": "2025-12-15T00:51:17+01:00",
+        "author": "Jules Boullier",
+        "message": "fix: adjust matrix calculation to be per-phase"
+    },
+    {
+        "hash": "f328df9",
+        "date": "2025-12-15T00:23:10+01:00",
+        "author": "Jules Boullier",
+        "message": "feat: persist matrix config to supabase"
+    },
+    {
+        "hash": "19fd102",
+        "date": "2025-12-15T00:14:06+01:00",
+        "author": "Jules Boullier",
+        "message": "feat: switch matrix config to min/max/step ranges"
+    },
+    {
+        "hash": "e4015df",
+        "date": "2025-12-15T00:06:33+01:00",
+        "author": "Jules Boullier",
+        "message": "feat: refactor matrix UI with sticky header and configurable ranges"
+    },
+    {
+        "hash": "63d10ed",
+        "date": "2025-12-14T23:56:27+01:00",
+        "author": "Jules Boullier",
+        "message": "feat: enhance matrix readability with dual pricing and rich tooltips"
+    },
+    {
+        "hash": "057f957",
+        "date": "2025-12-14T18:57:03+01:00",
+        "author": "Jules Boullier",
+        "message": "style(matrix): move convergence results to left column"
+    },
+    {
+        "hash": "2497e0f",
+        "date": "2025-12-14T18:41:29+01:00",
+        "author": "Jules Boullier",
+        "message": "feat: add Matrix page and reorganize sidebar navigation"
+    },
+    {
+        "hash": "f2841f1",
+        "date": "2025-12-14T18:27:57+01:00",
+        "author": "Jules Boullier",
+        "message": "fix: type errors and add pricing matrix to calculator"
+    },
+    {
+        "hash": "749c8bb",
+        "date": "2025-12-08T23:49:51+01:00",
+        "author": "Jules Boullier",
+        "message": "chore: Add Vercel Analytics"
+    },
+    {
+        "hash": "28cc50f",
+        "date": "2025-12-08T23:49:13+01:00",
+        "author": "Jules Boullier",
+        "message": "feat: Track Sellsy Export status and display in Dashboard"
+    },
+    {
+        "hash": "b6f5c39",
+        "date": "2025-12-08T23:45:11+01:00",
+        "author": "Jules Boullier",
+        "message": "fix: Remove stray markdown syntax causing build failure"
+    },
+    {
+        "hash": "d407de6",
+        "date": "2025-12-08T23:44:01+01:00",
+        "author": "Jules Boullier",
+        "message": "docs: Add Sellsy ID helper image to Guide"
+    },
+    {
+        "hash": "9804075",
+        "date": "2025-12-08T23:41:15+01:00",
+        "author": "Jules Boullier",
+        "message": "fix: Add auto-retry logic to Sellsy Import to handle expired tokens"
+    },
+    {
+        "hash": "89154a9",
+        "date": "2025-12-08T23:34:34+01:00",
+        "author": "Jules Boullier",
+        "message": "docs: Update User Guide content and contact info"
+    },
+    {
+        "hash": "fe3e31f",
+        "date": "2025-12-08T23:29:42+01:00",
+        "author": "Jules Boullier",
+        "message": "feat: Add User Guide page"
+    },
+    {
+        "hash": "5c24e0c",
+        "date": "2025-12-08T23:23:40+01:00",
+        "author": "Jules Boullier",
+        "message": "fix: Update UI target price from imported Sellsy estimate"
+    }
+]

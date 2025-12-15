@@ -16,6 +16,7 @@ import {
   CloudLightning,
   FileText,
   BookOpen,
+  Activity,
   Grid3X3
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -103,6 +104,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       items: [
         { label: "Configuration", href: "/settings", icon: <Settings className="h-5 w-5 shrink-0" /> },
         { label: "Guide", href: "/guide", icon: <BookOpen className="h-5 w-5 shrink-0" /> },
+        { label: "Journal", href: "/changelog", icon: <Activity className="h-5 w-5 shrink-0" /> },
       ]
     }
   ];
