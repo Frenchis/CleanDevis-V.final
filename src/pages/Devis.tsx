@@ -28,10 +28,11 @@ export const Devis = () => {
 
   // -- State --
   // We now maintain local state for typologies and phases to allow standalone usage
-  const [typologies, setTypologies] = useState<TypologyCount>(DEFAULT_TYPOLOGIES);
-  const [surfaceArea, setSurfaceArea] = useState<number>(0);
+  // Allow empty strings for inputs
+  const [typologies, setTypologies] = useState<{ [key: string]: number | '' }>(DEFAULT_TYPOLOGIES as unknown as { [key: string]: number | '' });
+  const [surfaceArea, setSurfaceArea] = useState<number | ''>(0);
   const [activePhases, setActivePhases] = useState<PhaseItem[]>([]); // Default for standalone
-  const [targetPrice, setTargetPrice] = useState<number>(0);
+  const [targetPrice, setTargetPrice] = useState<number | ''>(0);
   const [breakdown, setBreakdown] = useState<BreakdownItem[]>([]);
   const [calculatedTotal, setCalculatedTotal] = useState<number>(0);
   const [projectName, setProjectName] = useState<string>("Nouveau Projet");
@@ -91,7 +92,7 @@ export const Devis = () => {
   };
 
   const confirmImport = (data: Partial<ProjectData>) => {
-    if (data.typologies) setTypologies(data.typologies);
+    if (data.typologies) setTypologies(data.typologies as unknown as { [key: string]: number | '' });
     if (data.activePhases) setActivePhases(data.activePhases);
     if (data.name) setProjectName(data.name);
 
@@ -147,7 +148,7 @@ export const Devis = () => {
       setProjectData(proj);
       setProjectName(proj.name);
       setSubject(proj.subject || proj.name); // Default subject to name if empty
-      setTypologies(proj.typologies);
+      setTypologies(proj.typologies as unknown as { [key: string]: number | '' });
 
       // If we have a calculated price, use it as target
       if (proj.selectedSolution) {
@@ -180,7 +181,7 @@ export const Devis = () => {
       if (savedData) {
         try {
           const parsed = JSON.parse(savedData);
-          if (parsed.typologies) setTypologies(parsed.typologies);
+          if (parsed.typologies) setTypologies(parsed.typologies as unknown as { [key: string]: number | '' });
 
           if (parsed.activePhases) {
             const first = parsed.activePhases[0];
@@ -213,17 +214,23 @@ export const Devis = () => {
     // We only calculate if we have active phases. Price can be 0 (e.g. manual mode or initial import).
     if (activePhases.length > 0) {
 
-      const totalUnits = (Object.values(typologies) as number[]).reduce((a, b) => a + b, 0);
+      const totalUnits = (Object.values(typologies) as (number | '')[]).reduce((a, b) => (typeof a === 'number' ? a : 0) + (typeof b === 'number' ? b : 0), 0) as number;
+
+      const safeTypologies: TypologyCount = Object.fromEntries(
+        Object.entries(typologies).map(([k, v]) => [k, v === '' ? 0 : v])
+      ) as unknown as TypologyCount;
+
+      const safeTargetPrice = targetPrice === '' ? 0 : targetPrice;
 
       // Calculate breakdown even if totalUnits is 0 (Global mode)
-      const bd = calculateBreakdown(targetPrice || 0, typologies, activePhases);
+      const bd = calculateBreakdown(safeTargetPrice, safeTypologies, activePhases);
       setBreakdown(bd);
 
       // Calculate effective total (Verification)
       let total = 0;
       bd.forEach(phase => {
         if (totalUnits > 0) {
-          (Object.entries(typologies) as [string, number][]).forEach(([type, count]) => {
+          (Object.entries(safeTypologies) as [string, number][]).forEach(([type, count]) => {
             total += (phase.typologies[type] || 0) * count;
           });
         } else {
@@ -282,10 +289,10 @@ export const Devis = () => {
     }
   };
 
-  const handleTypologyChange = (key: keyof TypologyCount, value: number) => {
+  const handleTypologyChange = (key: keyof TypologyCount, value: number | '') => {
     setTypologies(prev => ({
       ...prev,
-      [key]: Math.max(0, value)
+      [key]: value === '' ? '' : Math.max(0, value)
     }));
   };
 
@@ -296,8 +303,9 @@ export const Devis = () => {
 
         // Recalculate phase total
         let newPhaseTotal = 0;
-        (Object.entries(typologies) as [string, number][]).forEach(([t, count]) => {
-          newPhaseTotal += (newTypos[t] || 0) * count;
+        (Object.entries(typologies) as [string, number | ''][]).forEach(([t, count]) => {
+          const safeCount = typeof count === 'number' ? count : 0;
+          newPhaseTotal += (newTypos[t] || 0) * safeCount;
         });
 
         return { ...item, typologies: newTypos, totalPhase: newPhaseTotal };
@@ -341,7 +349,7 @@ export const Devis = () => {
       type: 'danger'
     })) {
       setTargetPrice(0);
-      setTypologies(DEFAULT_TYPOLOGIES);
+      setTypologies(DEFAULT_TYPOLOGIES as unknown as { [key: string]: number | '' });
       setSurfaceArea(0);
       setActivePhases([]);
       setBreakdown([]);
@@ -372,20 +380,27 @@ export const Devis = () => {
       isNew = true;
     }
 
+    const safeTypologies: TypologyCount = Object.fromEntries(
+      Object.entries(typologies).map(([k, v]) => [k, v === '' ? 0 : v])
+    ) as unknown as TypologyCount;
+
+    const safeSurfaceArea = surfaceArea === '' ? 0 : surfaceArea;
+    const safeTotalLogements = (Object.values(safeTypologies) as number[]).reduce((a, b) => a + b, 0);
+
     const updatedProjectData: ProjectData = {
       ...projectData,
       id: targetId,
       name: projectName,
       subject: subject || projectName,
-      typologies: typologies,
-      surfaceArea: surfaceArea,
+      typologies: safeTypologies,
+      surfaceArea: safeSurfaceArea,
       activePhases: activePhases,
       complexity: projectData.complexity,
       selectedSolution: {
         ...projectData.selectedSolution!,
         priceFinal: calculatedTotal
       },
-      nbLogements: totalLogements,
+      nbLogements: safeTotalLogements,
       surfaceTotal: projectData.surfaceTotal,
       nbPhases: activePhases.length
     };
@@ -445,15 +460,20 @@ export const Devis = () => {
       // But createEstimate uses typologies and phases from project data.
       // Let's update projectData with current local state before sending
       // Calculate total apartments from current typologies
-      const totalApartments = (Object.values(typologies) as number[]).reduce((sum, count) => sum + count, 0);
+      // Calculate total apartments from current typologies
+      const safeTypologies = Object.fromEntries(
+        Object.entries(typologies).map(([k, v]) => [k, v === '' ? 0 : v])
+      ) as unknown as TypologyCount;
+      const safeSurfaceArea = surfaceArea === '' ? 0 : surfaceArea;
+      const totalApartments = (Object.values(safeTypologies) as number[]).reduce((sum, count) => sum + count, 0);
 
       const currentProject: ProjectData = {
         ...projectData,
-        typologies: typologies,
+        typologies: safeTypologies,
         nbPhases: activePhases.length,
         activePhases: activePhases, // FIX: Pass current active phases (including duplicates)
         nbLogements: totalApartments, // Update with current total
-        surfaceArea: surfaceArea, // Update with current surface area
+        surfaceArea: safeSurfaceArea, // Update with current surface area
         subject: subject || projectName
       };
 
@@ -524,9 +544,9 @@ export const Devis = () => {
     value: item.totalPhase
   }));
 
-  const diff = calculatedTotal - targetPrice;
+  const diff = calculatedTotal - (typeof targetPrice === 'number' ? targetPrice : 0);
   const isDiffSignificant = Math.abs(diff) > 5;
-  const totalLogements = (Object.values(typologies) as number[]).reduce((a, b) => a + b, 0);
+  const totalLogements = (Object.values(typologies) as (number | '')[]).reduce((a, b) => (typeof a === 'number' ? a : 0) + (typeof b === 'number' ? b : 0), 0) as number;
 
   return (
     <div className="p-6 max-w-[1600px] mx-auto pb-20">
@@ -681,9 +701,9 @@ export const Devis = () => {
               <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Prix Global Cible (€ HT)</label>
               <input
                 type="number"
-                value={targetPrice || ''}
+                value={targetPrice}
                 placeholder="0"
-                onChange={(e) => setTargetPrice(parseFloat(e.target.value) || 0)}
+                onChange={(e) => setTargetPrice(e.target.value === '' ? '' : parseFloat(e.target.value))}
                 className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-brand-green/30 rounded-2xl px-4 py-4 text-3xl font-bold text-slate-900 dark:text-white focus:ring-4 focus:ring-brand-green/20 focus:border-brand-green outline-none transition-all placeholder-slate-300 dark:placeholder-slate-700"
               />
             </div>
@@ -703,7 +723,7 @@ export const Devis = () => {
                   </span>
                 </div>
               ) : (
-                targetPrice > 0 && (
+                Number(targetPrice) > 0 && (
                   <div className="flex items-center justify-end gap-2 text-emerald-400 text-sm font-bold pt-2">
                     <CheckCircle className="w-4 h-4" /> Équilibré
                   </div>
@@ -729,15 +749,15 @@ export const Devis = () => {
 
           <div className="grid grid-cols-2 gap-3">
             {Object.keys(DEFAULT_TYPOLOGIES).map((key) => (
-              <div key={key} className={`bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border flex flex-col items-center transition-all ${surfaceArea > 0 ? 'opacity-50 grayscale' : 'border-slate-100 dark:border-slate-700'}`}>
+              <div key={key} className={`bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border flex flex-col items-center transition-all ${Number(surfaceArea) > 0 ? 'opacity-50 grayscale' : 'border-slate-100 dark:border-slate-700'}`}>
                 <label className="text-[10px] font-bold text-slate-400 uppercase mb-1">{key}</label>
                 <input
                   type="number"
                   min="0"
-                  value={typologies[key as keyof TypologyCount] || ''}
+                  value={typologies[key as keyof TypologyCount]}
                   placeholder="0"
-                  disabled={surfaceArea > 0}
-                  onChange={(e) => handleTypologyChange(key as keyof TypologyCount, parseInt(e.target.value) || 0)}
+                  disabled={Number(surfaceArea) > 0}
+                  onChange={(e) => handleTypologyChange(key as keyof TypologyCount, e.target.value === '' ? '' : parseInt(e.target.value))}
                   className="w-full bg-transparent text-2xl font-bold text-slate-900 dark:text-white text-center outline-none disabled:cursor-not-allowed"
                 />
               </div>
@@ -756,10 +776,10 @@ export const Devis = () => {
               <input
                 type="number"
                 min="0"
-                value={surfaceArea || ''}
+                value={surfaceArea}
                 placeholder="0"
                 disabled={totalLogements > 0}
-                onChange={(e) => setSurfaceArea(parseInt(e.target.value) || 0)}
+                onChange={(e) => setSurfaceArea(e.target.value === '' ? '' : parseInt(e.target.value))}
                 className="w-full bg-transparent text-2xl font-bold text-brand-blue text-center outline-none disabled:cursor-not-allowed"
               />
               {totalLogements > 0 && (

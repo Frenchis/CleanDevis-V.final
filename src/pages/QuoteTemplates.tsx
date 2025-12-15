@@ -46,7 +46,8 @@ const SPECIAL_ITEMS: Product[] = [
     { id: 's3', name: 'Sous-Total', category: 'special', price: 0, unit: '', type: 'sub-total' },
 ];
 
-interface TemplateItem extends Product {
+interface TemplateItem extends Omit<Product, 'price'> {
+    price: number | '';
     quantity: number;
     text?: string;
     tempId: string;
@@ -128,7 +129,7 @@ const SortableBuilderItem = ({
 }: {
     item: TemplateItem,
     updateQuantity: (id: string, d: number) => void,
-    updatePrice: (id: string, p: number) => void,
+    updatePrice: (id: string, p: number | '') => void,
     updateComment: (id: string, t: string) => void,
     removeItem: (id: string) => void
 }) => {
@@ -195,6 +196,8 @@ const SortableBuilderItem = ({
             );
         }
 
+        const safePrice = item.price === '' ? 0 : item.price;
+
         return (
             <>
                 <div className="p-3 bg-slate-50 dark:bg-slate-700/50 rounded-xl">
@@ -207,7 +210,7 @@ const SortableBuilderItem = ({
                         <input
                             type="number"
                             value={item.price}
-                            onChange={(e) => updatePrice(item.tempId, parseFloat(e.target.value) || 0)}
+                            onChange={(e) => updatePrice(item.tempId, e.target.value === '' ? '' : parseFloat(e.target.value))}
                             onPointerDown={(e) => e.stopPropagation()}
                             onKeyDown={(e) => e.stopPropagation()}
                             className="w-20 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded px-2 py-0.5 text-xs text-right font-mono focus:ring-1 focus:ring-brand-blue outline-none"
@@ -223,7 +226,7 @@ const SortableBuilderItem = ({
                 </div>
 
                 <div className="w-24 text-right font-bold text-slate-700 dark:text-slate-300">
-                    {(item.price * item.quantity).toLocaleString()} €
+                    {(safePrice * item.quantity).toLocaleString()} €
                 </div>
             </>
         );
@@ -283,7 +286,7 @@ const BuilderDroppable = ({
 }: {
     items: TemplateItem[],
     updateQuantity: (id: string, d: number) => void,
-    updatePrice: (id: string, p: number) => void,
+    updatePrice: (id: string, p: number | '') => void,
     updateComment: (id: string, t: string) => void,
     removeItem: (id: string) => void,
     dragOverId: string | null,
@@ -470,7 +473,7 @@ export const QuoteTemplates = () => {
         }));
     };
 
-    const updatePrice = (tempId: string, newPrice: number) => {
+    const updatePrice = (tempId: string, newPrice: number | '') => {
         setTemplateItems(prev => prev.map(item => {
             if (item.tempId === tempId) {
                 return { ...item, price: newPrice };
@@ -492,7 +495,10 @@ export const QuoteTemplates = () => {
         setTemplateItems(prev => prev.filter(item => item.tempId !== tempId));
     };
 
-    const total = templateItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const total = templateItems.reduce((sum, item) => {
+        const p = item.price === '' ? 0 : item.price;
+        return sum + (p * item.quantity);
+    }, 0);
 
     const handleSave = async () => {
         if (!templateName.trim()) {

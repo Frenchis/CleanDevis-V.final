@@ -2,35 +2,28 @@ import React, { useState, useEffect } from 'react';
 import { Grid3X3, Building, TrendingUp, Info, Settings, LayoutDashboard } from 'lucide-react';
 import gsap from 'gsap';
 import { Tooltip } from '../components/ui/Tooltip';
-import { MatrixSettingsModal, RangeConfig } from '../components/MatrixSettingsModal';
+import { MatrixSettingsModal, RangeConfig, generateArray } from '../components/MatrixSettingsModal';
 import { supabase } from '../lib/supabaseClient';
 import { useToast } from '../components/ui/Toast';
-
-// Helper to generate array from config
-const generateArray = (config: RangeConfig): number[] => {
-    const { min, max, step } = config;
-    if (step <= 0) return [];
-    const count = Math.floor((max - min) / step) + 1;
-    return Array.from({ length: count }, (_, i) => {
-        const val = min + (i * step);
-        return Math.round(val * 100) / 100;
-    });
-};
 
 export const Matrix = () => {
     const toast = useToast();
 
     // State for Inputs
-    const [nbLogements, setNbLogements] = useState<number>(15);
-    const [surface, setSurface] = useState<number>(1500);
-    const [phases, setPhases] = useState<number>(3);
-    const [prixJour, setPrixJour] = useState<number>(840);
+    const [nbLogements, setNbLogements] = useState<number | ''>(15);
+    const [surface, setSurface] = useState<number | ''>(1500);
+    const [phases, setPhases] = useState<number>(3); // Phases usually selected via buttons, keeping number
+    const [prixJour, setPrixJour] = useState<number | ''>(840);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
 
     // Matrix Parameters State (Configurable)
     const [prixM2Config, setPrixM2Config] = useState<RangeConfig>({ min: 1, max: 4, step: 0.5 });
     const [prixM2Values, setPrixM2Values] = useState<number[]>([1, 1.5, 2, 2.5, 3, 3.5, 4]);
+
+    // NEW: Prix Logement Config
+    const [prixLogementConfig, setPrixLogementConfig] = useState<RangeConfig>({ min: 50, max: 200, step: 10 });
+    const [prixLogementValues, setPrixLogementValues] = useState<number[]>([50, 60, 70, 80, 90, 100]);
 
     const [m2JourConfig, setM2JourConfig] = useState<RangeConfig>({ min: 200, max: 400, step: 100 });
     const [m2JourValues, setM2JourValues] = useState<number[]>([200, 300, 400]);
@@ -49,11 +42,15 @@ export const Matrix = () => {
                     .single();
 
                 if (data && data.value) {
-                    const { prixM2, m2Jour, logementsJour } = data.value;
+                    const { prixM2, prixLogement, m2Jour, logementsJour } = data.value;
 
                     if (prixM2) {
                         setPrixM2Config(prixM2);
                         setPrixM2Values(generateArray(prixM2));
+                    }
+                    if (prixLogement) {
+                        setPrixLogementConfig(prixLogement);
+                        setPrixLogementValues(generateArray(prixLogement));
                     }
                     if (m2Jour) {
                         setM2JourConfig(m2Jour);
@@ -90,21 +87,37 @@ export const Matrix = () => {
     }, []);
 
     // Calculate matrix data
-    // NOTE: Calculations are now based on PER PHASE quantities as requested
-    const targetSurface = surface;
-    const targetUnits = nbLogements;
+    // RULE: For calculations, we multiply by phases as requested ("x3")
+    const safeSurface = surface === '' ? 0 : surface;
+    const safeNbLogements = nbLogements === '' ? 0 : nbLogements;
+    const safePrixJour = prixJour === '' ? 0 : prixJour;
+
+    const totalSurfaceProject = safeSurface * phases;
+    const totalUnitsProject = safeNbLogements * phases;
 
     const generateMatrixData = (type: 'surface' | 'logement') => {
-        const values = type === 'surface' ? m2JourValues : logementsJourValues;
+        // Select appropriate arrays
+        const rowValues = type === 'surface' ? prixM2Values : prixLogementValues;
+        const colValues = type === 'surface' ? m2JourValues : logementsJourValues;
+
+        // Select appropriate target total (Surface or Units)
+        const targetTotal = type === 'surface' ? totalSurfaceProject : totalUnitsProject;
+
         let bestCell = { ecart: Infinity, row: 0, col: 0, prixProd: 0, prixMarche: 0 };
 
-        const rows = prixM2Values.map((pM2, rowIdx) => {
-            const prixMarche = targetSurface * pM2;
-            const cells = values.map((val, colIdx) => {
-                const nbJours = type === 'surface'
-                    ? (val > 0 ? targetSurface / val : Infinity)
-                    : (val > 0 ? targetUnits / val : Infinity);
-                const prixProd = nbJours * prixJour;
+        const rows = rowValues.map((rowVal, rowIdx) => {
+            // Prix Marché (Revenue) = Quantity * UnitPrice
+            // Using Total Project Quantity ensures consistency with Total Cost
+            const prixMarche = targetTotal * rowVal;
+
+            const cells = colValues.map((colVal, colIdx) => {
+                // Production Cost Calculation
+                // Cadence is usually "Quantity per Day"
+                // Days = TotalQuantity / Cadence
+                // Cost = Days * DailyPrice
+                const nbJours = colVal > 0 ? targetTotal / colVal : Infinity;
+                const prixProd = nbJours * safePrixJour;
+
                 const ecart = prixMarche > 0 ? Math.abs((prixProd - prixMarche) / prixMarche * 100) : Infinity;
 
                 if (ecart < bestCell.ecart) {
@@ -115,26 +128,30 @@ export const Matrix = () => {
                     prixProd: Math.round(prixProd),
                     prixMarche: Math.round(prixMarche),
                     ecart,
-                    prixM2: pM2
+                    rowVal // Prix M2 or Prix Unitaire 
                 };
             });
-            return { prixM2: pM2, cells };
+            return { rowVal, cells };
         });
 
-        return { rows, bestCell, values };
+        return { rows, bestCell, colValues, rowValues };
     };
 
     const matrixSurface = generateMatrixData('surface');
-    const matrixLogement = nbLogements > 0 ? generateMatrixData('logement') : null;
+    const matrixLogement = safeNbLogements > 0 ? generateMatrixData('logement') : null;
 
     const handleSaveConfigs = async (
         prixM2: { config: RangeConfig, values: number[] },
+        prixLogement: { config: RangeConfig, values: number[] },
         m2Jour: { config: RangeConfig, values: number[] },
         logementsJour: { config: RangeConfig, values: number[] }
     ) => {
         // Update Local State
         setPrixM2Config(prixM2.config);
         setPrixM2Values(prixM2.values);
+
+        setPrixLogementConfig(prixLogement.config);
+        setPrixLogementValues(prixLogement.values);
 
         setM2JourConfig(m2Jour.config);
         setM2JourValues(m2Jour.values);
@@ -150,6 +167,7 @@ export const Matrix = () => {
                     key: 'matrix_config',
                     value: {
                         prixM2: prixM2.config,
+                        prixLogement: prixLogement.config,
                         m2Jour: m2Jour.config,
                         logementsJour: logementsJour.config
                     },
@@ -175,7 +193,7 @@ export const Matrix = () => {
                     </div>
                     <div>
                         <h1 className="text-xl font-bold text-slate-900 dark:text-white">Matrices de Convergence</h1>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">Rentabilité immédiate (Par Phase)</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">Rentabilité immédiate (Projet Global)</p>
                     </div>
                 </div>
 
@@ -188,7 +206,7 @@ export const Matrix = () => {
                         <input
                             type="number"
                             value={surface}
-                            onChange={(e) => setSurface(Number(e.target.value) || 0)}
+                            onChange={(e) => setSurface(e.target.value === '' ? '' : Number(e.target.value))}
                             className="w-24 bg-transparent font-bold text-slate-900 dark:text-white outline-none border-b border-slate-300 dark:border-slate-600 focus:border-violet-500 text-sm py-1"
                         />
                     </div>
@@ -197,11 +215,11 @@ export const Matrix = () => {
 
                     {/* Logements */}
                     <div className="flex flex-col px-2">
-                        <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-0.5">Nb Logements</label>
+                        <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-0.5">Log / Phase</label>
                         <input
                             type="number"
                             value={nbLogements}
-                            onChange={(e) => setNbLogements(Number(e.target.value) || 0)}
+                            onChange={(e) => setNbLogements(e.target.value === '' ? '' : Number(e.target.value))}
                             className="w-24 bg-transparent font-bold text-slate-900 dark:text-white outline-none border-b border-slate-300 dark:border-slate-600 focus:border-violet-500 text-sm py-1"
                         />
                     </div>
@@ -235,7 +253,7 @@ export const Matrix = () => {
                         <input
                             type="number"
                             value={prixJour}
-                            onChange={(e) => setPrixJour(Number(e.target.value) || 0)}
+                            onChange={(e) => setPrixJour(e.target.value === '' ? '' : Number(e.target.value))}
                             className="w-20 bg-transparent font-bold text-slate-900 dark:text-white outline-none border-b border-slate-300 dark:border-slate-600 focus:border-violet-500 text-sm py-1"
                         />
                     </div>
@@ -320,26 +338,27 @@ export const Matrix = () => {
                                 <thead>
                                     <tr>
                                         <th className="bg-slate-50 dark:bg-slate-800 p-3 text-xs font-medium text-slate-500 uppercase tracking-wider border-b border-slate-200 dark:border-slate-700">€ / m²</th>
-                                        {matrixSurface.values.map(v => (
+                                        {matrixSurface.colValues.map(v => (
                                             <th key={v} className="bg-slate-50 dark:bg-slate-800 p-3 text-xs font-medium text-slate-500 uppercase tracking-wider border-b border-slate-200 dark:border-slate-700">{v} m²/j</th>
                                         ))}
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {matrixSurface.rows.map((row, rowIdx) => (
-                                        <tr key={row.prixM2} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                                            <td className="p-2 font-bold text-center text-xs text-slate-700 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700/50 bg-slate-50/30 dark:bg-slate-800/30">{row.prixM2.toFixed(2)} €</td>
+                                    {matrixSurface.rows.map((row) => (
+                                        <tr key={row.rowVal} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                                            <td className="p-2 font-bold text-center text-xs text-slate-700 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700/50 bg-slate-50/30 dark:bg-slate-800/30">{row.rowVal.toFixed(2)} €</td>
                                             {row.cells.map((cell, colIdx) => {
-                                                const isBest = rowIdx === matrixSurface.bestCell.row && colIdx === matrixSurface.bestCell.col;
-                                                const cellClass = cell.ecart <= 10
+                                                const ecart = cell.ecart;
+                                                const cellClass = ecart <= 10
                                                     ? 'bg-emerald-100/80 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300'
-                                                    : cell.ecart <= 20
+                                                    : ecart <= 20
                                                         ? 'bg-amber-100/80 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300'
                                                         : 'text-slate-500 dark:text-slate-500';
+
                                                 return (
                                                     <td
                                                         key={colIdx}
-                                                        className={`p-0 text-center border-b border-r border-slate-100 dark:border-slate-800 last:border-r-0 ${cellClass} ${isBest ? 'ring-2 ring-violet-500 ring-inset z-10 relative' : ''}`}
+                                                        className={`p-0 text-center border-b border-r border-slate-100 dark:border-slate-800 last:border-r-0 ${cellClass}`}
                                                     >
                                                         <Tooltip
                                                             className="min-w-[200px]"
@@ -348,26 +367,26 @@ export const Matrix = () => {
                                                                     <div className="font-bold border-b border-slate-700 pb-1 mb-1">Détails du calcul</div>
                                                                     <div className="space-y-1">
                                                                         <div className="flex justify-between gap-4">
-                                                                            <span className="text-slate-400">Production (Cadence):</span>
+                                                                            <span className="text-slate-400">Production (Coût):</span>
                                                                             <span className="font-mono font-bold text-emerald-400">{cell.prixProd.toLocaleString('fr-FR')} €</span>
                                                                         </div>
                                                                         <div className="text-[10px] text-slate-500 pl-2 opacity-80">
-                                                                            ({targetSurface.toLocaleString('fr-FR')} m² / Cadence) x Prix Jour
+                                                                            ({totalSurfaceProject.toLocaleString('fr-FR')} m²/{matrixSurface.colValues[colIdx]}) x {prixJour}€
                                                                         </div>
                                                                     </div>
                                                                     <div className="space-y-1">
                                                                         <div className="flex justify-between gap-4">
-                                                                            <span className="text-slate-400">Cible (Prix m²):</span>
+                                                                            <span className="text-slate-400">Cible (Rev):</span>
                                                                             <span className="font-mono font-bold text-violet-400">{cell.prixMarche.toLocaleString('fr-FR')} €</span>
                                                                         </div>
                                                                         <div className="text-[10px] text-slate-500 pl-2 opacity-80">
-                                                                            ({targetSurface.toLocaleString('fr-FR')} m² x Prix M2)
+                                                                            {totalSurfaceProject.toLocaleString('fr-FR')} m² x {row.rowVal} €
                                                                         </div>
                                                                     </div>
                                                                     <div className="pt-2 border-t border-slate-700 flex justify-between gap-4">
                                                                         <span className="text-slate-300">Écart:</span>
-                                                                        <span className={`font-bold ${cell.ecart <= 10 ? 'text-emerald-400' : cell.ecart <= 20 ? 'text-amber-400' : 'text-red-400'}`}>
-                                                                            {cell.ecart.toFixed(1)}%
+                                                                        <span className={`font-bold ${ecart <= 10 ? 'text-emerald-400' : ecart <= 20 ? 'text-amber-400' : 'text-red-400'}`}>
+                                                                            {ecart.toFixed(1)}%
                                                                         </span>
                                                                     </div>
                                                                 </div>
@@ -381,7 +400,7 @@ export const Matrix = () => {
                                                                     vs {cell.prixMarche.toLocaleString('fr-FR')}
                                                                 </div>
                                                                 <div className="text-[10px] font-medium opacity-90 scale-90">
-                                                                    {cell.ecart.toFixed(1)}%
+                                                                    {ecart.toFixed(1)}%
                                                                 </div>
                                                             </div>
                                                         </Tooltip>
@@ -400,33 +419,33 @@ export const Matrix = () => {
                         <div>
                             <div className="flex items-center gap-2 mb-3">
                                 <TrendingUp className="w-4 h-4 text-violet-500" />
-                                <h3 className="text-sm font-bold text-violet-600 dark:text-violet-400">Matrice Logement (€/m² vs log/jour)</h3>
+                                <h3 className="text-sm font-bold text-violet-600 dark:text-violet-400">Matrice Logement (€/u vs u/jour)</h3>
                             </div>
                             <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
                                 <table className="w-full text-sm">
                                     <thead>
                                         <tr>
-                                            <th className="bg-slate-50 dark:bg-slate-800 p-3 text-xs font-medium text-slate-500 uppercase tracking-wider border-b border-slate-200 dark:border-slate-700">€ / m²</th>
-                                            {matrixLogement.values.map(v => (
-                                                <th key={v} className="bg-slate-50 dark:bg-slate-800 p-3 text-xs font-medium text-slate-500 uppercase tracking-wider border-b border-slate-200 dark:border-slate-700">{v} log/j</th>
+                                            <th className="bg-slate-50 dark:bg-slate-800 p-3 text-xs font-medium text-slate-500 uppercase tracking-wider border-b border-slate-200 dark:border-slate-700">€ / Unité</th>
+                                            {matrixLogement.colValues.map(v => (
+                                                <th key={v} className="bg-slate-50 dark:bg-slate-800 p-3 text-xs font-medium text-slate-500 uppercase tracking-wider border-b border-slate-200 dark:border-slate-700">{v} u/j</th>
                                             ))}
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {matrixLogement.rows.map((row, rowIdx) => (
-                                            <tr key={row.prixM2} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                                                <td className="p-2 font-bold text-center text-xs text-slate-700 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700/50 bg-slate-50/30 dark:bg-slate-800/30">{row.prixM2.toFixed(2)} €</td>
+                                        {matrixLogement.rows.map((row) => (
+                                            <tr key={row.rowVal} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                                                <td className="p-2 font-bold text-center text-xs text-slate-700 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700/50 bg-slate-50/30 dark:bg-slate-800/30">{row.rowVal.toFixed(0)} €</td>
                                                 {row.cells.map((cell, colIdx) => {
-                                                    const isBest = rowIdx === matrixLogement.bestCell.row && colIdx === matrixLogement.bestCell.col;
-                                                    const cellClass = cell.ecart <= 10
+                                                    const ecart = cell.ecart;
+                                                    const cellClass = ecart <= 10
                                                         ? 'bg-emerald-100/80 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300'
-                                                        : cell.ecart <= 20
+                                                        : ecart <= 20
                                                             ? 'bg-amber-100/80 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300'
                                                             : 'text-slate-500 dark:text-slate-500';
                                                     return (
                                                         <td
                                                             key={colIdx}
-                                                            className={`p-0 text-center border-b border-r border-slate-100 dark:border-slate-800 last:border-r-0 ${cellClass} ${isBest ? 'ring-2 ring-violet-500 ring-inset z-10 relative' : ''}`}
+                                                            className={`p-0 text-center border-b border-r border-slate-100 dark:border-slate-800 last:border-r-0 ${cellClass}`}
                                                         >
                                                             <Tooltip
                                                                 className="min-w-[200px]"
@@ -435,26 +454,26 @@ export const Matrix = () => {
                                                                         <div className="font-bold border-b border-slate-700 pb-1 mb-1">Détails du calcul</div>
                                                                         <div className="space-y-1">
                                                                             <div className="flex justify-between gap-4">
-                                                                                <span className="text-slate-400">Production (Logts):</span>
+                                                                                <span className="text-slate-400">Production (Coût):</span>
                                                                                 <span className="font-mono font-bold text-emerald-400">{cell.prixProd.toLocaleString('fr-FR')} €</span>
                                                                             </div>
                                                                             <div className="text-[10px] text-slate-500 pl-2 opacity-80">
-                                                                                ({targetUnits.toLocaleString('fr-FR')} u / Cadence) x Prix Jour
+                                                                                ({totalUnitsProject.toLocaleString('fr-FR')} u/{matrixLogement.colValues[colIdx]}) x {prixJour}€
                                                                             </div>
                                                                         </div>
                                                                         <div className="space-y-1">
                                                                             <div className="flex justify-between gap-4">
-                                                                                <span className="text-slate-400">Cible (Prix m²):</span>
+                                                                                <span className="text-slate-400">Cible (Rev):</span>
                                                                                 <span className="font-mono font-bold text-violet-400">{cell.prixMarche.toLocaleString('fr-FR')} €</span>
                                                                             </div>
                                                                             <div className="text-[10px] text-slate-500 pl-2 opacity-80">
-                                                                                ({targetSurface.toLocaleString('fr-FR')} m² x Prix M2)
+                                                                                {totalUnitsProject.toLocaleString('fr-FR')} u x {row.rowVal} €
                                                                             </div>
                                                                         </div>
                                                                         <div className="pt-2 border-t border-slate-700 flex justify-between gap-4">
                                                                             <span className="text-slate-300">Écart:</span>
-                                                                            <span className={`font-bold ${cell.ecart <= 10 ? 'text-emerald-400' : cell.ecart <= 20 ? 'text-amber-400' : 'text-red-400'}`}>
-                                                                                {cell.ecart.toFixed(1)}%
+                                                                            <span className={`font-bold ${ecart <= 10 ? 'text-emerald-400' : ecart <= 20 ? 'text-amber-400' : 'text-red-400'}`}>
+                                                                                {ecart.toFixed(1)}%
                                                                             </span>
                                                                         </div>
                                                                     </div>
@@ -468,7 +487,7 @@ export const Matrix = () => {
                                                                         vs {cell.prixMarche.toLocaleString('fr-FR')}
                                                                     </div>
                                                                     <div className="text-[10px] font-medium opacity-90 scale-90">
-                                                                        {cell.ecart.toFixed(1)}%
+                                                                        {ecart.toFixed(1)}%
                                                                     </div>
                                                                 </div>
                                                             </Tooltip>
@@ -489,6 +508,7 @@ export const Matrix = () => {
                 isOpen={isSettingsOpen}
                 onClose={() => setIsSettingsOpen(false)}
                 prixM2Config={prixM2Config}
+                prixLogementConfig={prixLogementConfig}
                 m2JourConfig={m2JourConfig}
                 logementsJourConfig={logementsJourConfig}
                 onSaveConfigs={handleSaveConfigs}

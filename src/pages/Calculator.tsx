@@ -42,14 +42,15 @@ export const Calculator = () => {
   const toast = useToast();
 
   // State
-  const [nbLogements, setNbLogements] = useState<number>(15);
-  const [surface, setSurface] = useState<number>(1500);
+  const [nbLogements, setNbLogements] = useState<number | ''>(15);
+  const [surface, setSurface] = useState<number | ''>(1500);
   const [phases, setPhases] = useState<number>(3);
   const [client, setClient] = useState<SellsyClient | null>(null);
   const [clientName, setClientName] = useState<string>(''); // For free text or display
   const [projectName, setProjectName] = useState<string>('');
 
-  const [typologies, setTypologies] = useState<TypologyCount>({
+  // Typologies can technically hold '' during editing, so we cast to any or define a draft type
+  const [typologies, setTypologies] = useState<any>({
     T1: 0, T2: 5, T3: 5, T4: 5, T5: 0, Autre: 0
   });
 
@@ -94,7 +95,20 @@ export const Calculator = () => {
 
   // Recalculate on input change
   useEffect(() => {
-    const rawSolutions = findConvergentSolutions(nbLogements, surface, phases, typologies);
+    // Sanitize inputs for calculation (treat '' as 0)
+    const safeNbLogements = nbLogements === '' ? 0 : nbLogements;
+    const safeSurface = surface === '' ? 0 : surface;
+
+    const safeTypologies: TypologyCount = {
+      T1: Number(typologies.T1) || 0,
+      T2: Number(typologies.T2) || 0,
+      T3: Number(typologies.T3) || 0,
+      T4: Number(typologies.T4) || 0,
+      T5: Number(typologies.T5) || 0,
+      Autre: Number(typologies.Autre) || 0,
+    };
+
+    const rawSolutions = findConvergentSolutions(safeNbLogements, safeSurface, phases, safeTypologies);
     const multiplier = calculateComplexityMultiplier(complexity);
 
     // Apply multiplier to all prices in solutions
@@ -128,6 +142,18 @@ export const Calculator = () => {
   const complexityMultiplier = calculateComplexityMultiplier(complexity);
 
   const handleSave = async () => {
+    // Safe values for saving
+    const safeNbLogements = nbLogements === '' ? 0 : nbLogements;
+    const safeSurface = surface === '' ? 0 : surface;
+    const safeTypologies: TypologyCount = {
+      T1: Number(typologies.T1) || 0,
+      T2: Number(typologies.T2) || 0,
+      T3: Number(typologies.T3) || 0,
+      T4: Number(typologies.T4) || 0,
+      T5: Number(typologies.T5) || 0,
+      Autre: Number(typologies.Autre) || 0,
+    };
+
     // Import getStandardPhases to generate default phase items
     const { getStandardPhases } = await import('../services/calculationService');
     const standardPhases = getStandardPhases(phases);
@@ -138,15 +164,15 @@ export const Calculator = () => {
 
     const projectData: ProjectData = {
       id: crypto.randomUUID(), // Generate a UUID for Supabase
-      name: projectName || `Devis ${nbLogements} Logts`,
+      name: projectName || `Devis ${safeNbLogements} Logts`,
       date: new Date().toISOString(),
       client: client ? client.name : (clientName || 'Client Anonyme'),
       sellsyClientId: client?.id,
       sellsyClientType: client ? (client.type === 'person' ? 'individual' : 'company') : undefined,
-      nbLogements,
-      surfaceTotal: surface,
+      nbLogements: safeNbLogements,
+      surfaceTotal: safeSurface,
       nbPhases: phases,
-      typologies,
+      typologies: safeTypologies,
       complexity,
       selectedSolution: bestSolution,
       activePhases: phaseItems
@@ -274,7 +300,7 @@ export const Calculator = () => {
                 <input
                   type="number"
                   value={nbLogements}
-                  onChange={(e) => setNbLogements(Number(e.target.value))}
+                  onChange={(e) => setNbLogements(e.target.value === '' ? '' : Number(e.target.value))}
                   className="w-full bg-transparent text-3xl font-bold text-slate-900 dark:text-white outline-none mt-1"
                 />
               </div>
@@ -283,7 +309,7 @@ export const Calculator = () => {
                 <input
                   type="number"
                   value={surface}
-                  onChange={(e) => setSurface(Number(e.target.value))}
+                  onChange={(e) => setSurface(e.target.value === '' ? '' : Number(e.target.value))}
                   className="w-full bg-transparent text-3xl font-bold text-slate-900 dark:text-white outline-none mt-1"
                 />
               </div>
@@ -316,7 +342,7 @@ export const Calculator = () => {
                     <input
                       type="number"
                       value={typologies[t as keyof TypologyCount]}
-                      onChange={(e) => setTypologies({ ...typologies, [t]: parseInt(e.target.value) || 0 })}
+                      onChange={(e) => setTypologies({ ...typologies, [t]: e.target.value === '' ? '' : parseInt(e.target.value) })}
                       className="w-full bg-transparent text-lg font-bold text-slate-900 dark:text-white text-center outline-none"
                     />
                   </div>
@@ -442,7 +468,7 @@ export const Calculator = () => {
                           {sol.priceFinal.toLocaleString()} €
                         </div>
                         <div className="text-[10px] text-slate-400 mt-0.5">
-                          {Math.round(sol.priceFinal / nbLogements).toLocaleString()} €/log
+                          {Math.round(sol.priceFinal / (typeof nbLogements === 'number' && nbLogements > 0 ? nbLogements : 1)).toLocaleString()} €/log
                         </div>
                       </div>
                     </div>
