@@ -4,16 +4,24 @@ import { GitCommit, Calendar, ArrowLeft, Activity } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import changelogData from '../data/changelog.json';
 
-// Helper to format date
+// Helper to format date safely
 const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat('fr-FR', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    }).format(date);
+    try {
+        const date = new Date(dateString);
+        // Check if date is valid
+        if (isNaN(date.getTime())) {
+            return dateString; // Return original string if parsing fails
+        }
+        return new Intl.DateTimeFormat('fr-FR', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        }).format(date);
+    } catch (e) {
+        return dateString;
+    }
 };
 
 export const Changelog = () => {

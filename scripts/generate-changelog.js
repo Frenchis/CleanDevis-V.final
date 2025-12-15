@@ -14,8 +14,9 @@ try {
 
     // Fetch git log in JSON-like format
     // We use a custom separator ~|~ to avoid issues with quotes in messages
+    // Using iso-strict to ensure valid parsing by new Date() in all browsers/environments
     const logOutput = execSync(
-        'git log --date=iso --pretty=format:"%h~|~%ad~|~%an~|~%s"'
+        'git log --date=iso-strict --pretty=format:"%h~|~%ad~|~%an~|~%s"'
     ).toString();
 
     const entries = logOutput
