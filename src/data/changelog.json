@@ -1,5 +1,11 @@
 [
     {
+        "hash": "f311daa",
+        "date": "2025-12-15T21:50:49+01:00",
+        "author": "Jules Boullier",
+        "message": "Feat: Add Changelog page with git history"
+    },
+    {
         "hash": "04afaa7",
         "date": "2025-12-15T21:46:09+01:00",
         "author": "Jules Boullier",
@@ -118,5 +124,203 @@
         "date": "2025-12-08T23:23:40+01:00",
         "author": "Jules Boullier",
         "message": "fix: Update UI target price from imported Sellsy estimate"
+    },
+    {
+        "hash": "7e982a8",
+        "date": "2025-12-08T23:22:04+01:00",
+        "author": "Jules Boullier",
+        "message": "style: Restore action buttons to top-right"
+    },
+    {
+        "hash": "600c0e3",
+        "date": "2025-12-08T23:21:19+01:00",
+        "author": "Jules Boullier",
+        "message": "fix: Support unitAmount camelCase in Sellsy Import"
+    },
+    {
+        "hash": "fd89e32",
+        "date": "2025-12-08T23:19:04+01:00",
+        "author": "Jules Boullier",
+        "message": "fix: Import Modal phase detection for PhaseItem objects"
+    },
+    {
+        "hash": "10ac24b",
+        "date": "2025-12-08T23:18:09+01:00",
+        "author": "Jules Boullier",
+        "message": "style: Remove redundant Phase Selectors from header"
+    },
+    {
+        "hash": "b46a2d7",
+        "date": "2025-12-08T23:16:06+01:00",
+        "author": "Jules Boullier",
+        "message": "feat: Support Multiple Phases & Fix Sellsy Import/Export"
+    },
+    {
+        "hash": "4c71ef0",
+        "date": "2025-12-08T22:58:14+01:00",
+        "author": "Jules Boullier",
+        "message": "fix: Supabase Auth Environment Variables (Vite compat)"
+    },
+    {
+        "hash": "f6a066f",
+        "date": "2025-12-08T22:54:52+01:00",
+        "author": "Jules Boullier",
+        "message": "feat: Sellsy Import with Validation Modal & Update Estimate logic"
+    },
+    {
+        "hash": "a0614a9",
+        "date": "2025-12-05T10:11:59+01:00",
+        "author": "Jules Boullier",
+        "message": "style: improve visibility of phase count badges"
+    },
+    {
+        "hash": "b734448",
+        "date": "2025-12-05T10:09:54+01:00",
+        "author": "Jules Boullier",
+        "message": "fix: correctly initialize active phases from project data"
+    },
+    {
+        "hash": "240d4a2",
+        "date": "2025-12-05T10:04:35+01:00",
+        "author": "Jules Boullier",
+        "message": "feat: allow multiple phases of the same type"
+    },
+    {
+        "hash": "40a594a",
+        "date": "2025-12-05T09:50:14+01:00",
+        "author": "Jules Boullier",
+        "message": "fix: pass surface area to sellsy export payload"
+    },
+    {
+        "hash": "e53dfc2",
+        "date": "2025-12-05T09:39:10+01:00",
+        "author": "Jules Boullier",
+        "message": "feat: update phase description format for surface area"
+    },
+    {
+        "hash": "fa02973",
+        "date": "2025-12-05T09:33:53+01:00",
+        "author": "Jules Boullier",
+        "message": "fix: handle global surface mode in sellsy quote generation"
+    },
+    {
+        "hash": "a95b696",
+        "date": "2025-12-03T16:10:20+01:00",
+        "author": "Jules Boullier",
+        "message": "style: move surface area input below typologies and add separator"
+    },
+    {
+        "hash": "ef571b5",
+        "date": "2025-12-03T16:06:48+01:00",
+        "author": "Jules Boullier",
+        "message": "feat: add surface area support and update sellsy estimate format"
+    },
+    {
+        "hash": "077c3b0",
+        "date": "2025-12-02T19:54:48+01:00",
+        "author": "Jules Boullier",
+        "message": "fix: remove subject line item from estimate creation"
+    },
+    {
+        "hash": "8e10ed9",
+        "date": "2025-12-02T19:47:44+01:00",
+        "author": "Jules Boullier",
+        "message": "chore: add custom SVG favicon"
+    },
+    {
+        "hash": "95dc3f6",
+        "date": "2025-12-02T19:37:45+01:00",
+        "author": "Jules Boullier",
+        "message": "chore: update page title and add favicon link"
+    },
+    {
+        "hash": "778be3c",
+        "date": "2025-12-02T19:20:00+01:00",
+        "author": "Jules Boullier",
+        "message": "fix: correct parsing of search results for clients"
+    },
+    {
+        "hash": "27483c8",
+        "date": "2025-12-02T19:15:28+01:00",
+        "author": "Jules Boullier",
+        "message": "chore: add debug logs to client search"
+    },
+    {
+        "hash": "3268669",
+        "date": "2025-12-02T19:09:43+01:00",
+        "author": "Jules Boullier",
+        "message": "feat: improve client search (partial match) and rename UI labels"
+    },
+    {
+        "hash": "4f8bb28",
+        "date": "2025-12-02T18:02:31+01:00",
+        "author": "Jules Boullier",
+        "message": "fix: move pagination to query params to resolve API 400 error"
+    },
+    {
+        "hash": "dbd5d67",
+        "date": "2025-12-02T17:57:30+01:00",
+        "author": "Jules Boullier",
+        "message": "fix: auto-check API status and improve catalog search with empty filters"
+    },
+    {
+        "hash": "55098b4",
+        "date": "2025-12-02T17:50:21+01:00",
+        "author": "Jules Boullier",
+        "message": "feat: add API status indicator and fix Sellsy catalog search"
+    },
+    {
+        "hash": "7f74dca",
+        "date": "2025-12-02T17:39:29+01:00",
+        "author": "Jules Boullier",
+        "message": "Remove mock data and sync Sellsy catalog"
+    },
+    {
+        "hash": "2d830e9",
+        "date": "2025-12-02T17:29:58+01:00",
+        "author": "Jules Boullier",
+        "message": "Refactor API to use simple proxy"
+    },
+    {
+        "hash": "f4b21cb",
+        "date": "2025-12-02T17:22:29+01:00",
+        "author": "Jules Boullier",
+        "message": "Explicitly route API requests in Vercel"
+    },
+    {
+        "hash": "9f3298b",
+        "date": "2025-12-02T17:17:42+01:00",
+        "author": "Jules Boullier",
+        "message": "Fix Vercel routing and CORS"
+    },
+    {
+        "hash": "8ef11e9",
+        "date": "2025-12-02T16:56:15+01:00",
+        "author": "Jules Boullier",
+        "message": "Handle OPTIONS requests in Vercel proxy"
+    },
+    {
+        "hash": "7058348",
+        "date": "2025-12-02T16:51:17+01:00",
+        "author": "Jules Boullier",
+        "message": "Add Vercel Serverless Function for Sellsy Proxy"
+    },
+    {
+        "hash": "eb7f7b3",
+        "date": "2025-12-02T16:17:12+01:00",
+        "author": "Jules Boullier",
+        "message": "Rename api proxy to sellsy-proxy"
+    },
+    {
+        "hash": "8c673c9",
+        "date": "2025-12-02T15:55:10+01:00",
+        "author": "Jules Boullier",
+        "message": "Add vercel.json for proxy"
+    },
+    {
+        "hash": "ca4077a",
+        "date": "2025-12-02T15:30:37+01:00",
+        "author": "Jules Boullier",
+        "message": "Initial commit"
     }
 ]
