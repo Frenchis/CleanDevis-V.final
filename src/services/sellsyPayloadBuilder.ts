@@ -67,38 +67,66 @@ export const buildEstimatePayload = async (project: ProjectData, clientId: strin
             text: getPhaseDescription(phaseName, project.nbLogements, project.surfaceArea)
         });
 
-        const productCode = config.sellsy?.productMapping?.[phaseName as Phase] || 'GENERIC_SERVICE';
+        // CHECK FOR TEMPLATE ITEMS FIRST
+        if (phaseItem.templateItems && phaseItem.templateItems.length > 0) {
+            // Use specific items from the template
+            phaseItem.templateItems.forEach(item => {
+                if (item.type === 'break-page') {
+                    lines.push({ type: 'break-page' });
+                } else if (item.type === 'comment') {
+                    lines.push({
+                        type: 'comment',
+                        text: item.text || item.description
+                    });
+                } else if (item.type === 'sub-total') {
+                    lines.push({ type: 'sub-total' });
+                } else {
+                    // Standard Product/Service Line
+                    lines.push({
+                        type: 'single',
+                        reference: item.reference || config.sellsy?.productMapping?.[phaseName as Phase] || 'GENERIC_SERVICE',
+                        description: item.description || item.name || 'Article',
+                        quantity: (item.quantity || 1).toString(),
+                        unit_amount: (item.price || 0).toFixed(2),
+                        tax_id: taxId
+                    });
+                }
+            });
+        } else {
+            // STANDARD PHASE: Breakdown by Typology
+            const productCode = config.sellsy?.productMapping?.[phaseName as Phase] || 'GENERIC_SERVICE';
 
-        let hasTypologies = false;
-        Object.entries(phaseItem.typologies).forEach(([type, priceValue]) => {
-            const price = priceValue as number;
-            const count = project.typologies[type as keyof typeof project.typologies] || 0;
-            if (count > 0) {
-                hasTypologies = true;
+            let hasTypologies = false;
+            Object.entries(phaseItem.typologies).forEach(([type, priceValue]) => {
+                const price = priceValue as number;
+                const count = project.typologies[type as keyof typeof project.typologies] || 0;
+                if (count > 0) {
+                    hasTypologies = true;
+                    lines.push({
+                        type: 'single',
+                        reference: productCode,
+                        description: `${phaseName} - Typologie ${type}`,
+                        quantity: count.toString(),
+                        unit_amount: price.toFixed(2), // Price per unit
+                        tax_id: taxId
+                    });
+                }
+            });
+
+            // FALLBACK: If no typologies were added (Global Surface Mode), add a single line for the phase
+            if (!hasTypologies) {
                 lines.push({
                     type: 'single',
                     reference: productCode,
-                    description: `${phaseName} - Typologie ${type}`,
-                    quantity: count.toString(),
-                    unit_amount: price.toFixed(2), // Price per unit
+                    description: `${phaseName} - Forfait Global`,
+                    quantity: "1",
+                    unit_amount: phaseItem.totalPhase.toFixed(2),
                     tax_id: taxId
                 });
             }
-        });
-
-        // FALLBACK: If no typologies were added (Global Surface Mode), add a single line for the phase
-        if (!hasTypologies) {
-            lines.push({
-                type: 'single',
-                reference: productCode,
-                description: `${phaseName} - Forfait Global`,
-                quantity: "1",
-                unit_amount: phaseItem.totalPhase.toFixed(2),
-                tax_id: taxId
-            });
         }
 
-        // Add Sub-Total for Phase
+        // Add Sub-Total for Phase (Always add subtotal for clarity)
         lines.push({
             type: 'sub-total'
         });
