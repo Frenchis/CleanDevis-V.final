@@ -56,7 +56,10 @@ export interface Solution {
 
 export interface PhaseItem {
   id: string; // Unique UUID
-  type: Phase;
+  type: string; // Changed from Phase to string to support templates
+  isTemplate?: boolean;
+  templatePrice?: number;
+  templateItems?: any[]; // Store items for Sellsy export
 }
 
 export interface ProjectData {
@@ -86,6 +89,7 @@ export interface BreakdownItem {
   typologies: {
     [key: string]: number; // Price per unit for this type in this phase
   };
+  templateItems?: any[]; // Store items for Sellsy export if it's a template
 }
 
 export interface GlobalConfig {

@@ -254,9 +254,7 @@ export const calculateBreakdown = (
 
   if (totalWeight === 0) totalWeight = 1;
 
-  let totalPhaseWeight = 0;
-
-  // Helper to normalize input
+  // Normalize Phases
   const normalizedPhases: PhaseItem[] = activePhases.map((p, i) => {
     if (typeof p === 'string') {
       return { id: `legacy-${p}-${i}`, type: p as any };
@@ -264,14 +262,41 @@ export const calculateBreakdown = (
     return p;
   });
 
-  normalizedPhases.forEach(p => {
+  // Separate Standard Phases and Template Phases
+  const standardPhases = normalizedPhases.filter(p => !p.isTemplate);
+  const templatePhases = normalizedPhases.filter(p => p.isTemplate);
+
+  // Calculate Fixed Costs from Templates
+  let totalFixedCost = 0;
+  templatePhases.forEach(p => {
+    totalFixedCost += (p.templatePrice || 0);
+  });
+
+  // Distributable Total for Standard Phases
+  // If totalPrice is 0 (initial), we don't subtract.
+  // If totalPrice is > 0, we assume it's the target, so we subtract fixed costs to find remaining budget for standard
+  // BUT: if fixed costs > totalPrice, we might have negative. Clamp to 0?
+  // Actually, if totalPrice is provided, it's usually just the sum of everything in Verification mode.
+  // In "Target Mode", we want to split the Target.
+  // Let's assume totalPrice IS the target.
+  const distributableTotal = Math.max(0, totalPrice - totalFixedCost);
+
+  let totalPhaseWeight = 0;
+  standardPhases.forEach(p => {
     totalPhaseWeight += PHASE_WEIGHTS[p.type as keyof typeof PHASE_WEIGHTS] || 0;
   });
 
-  const breakdown: BreakdownItem[] = normalizedPhases.map((item, index) => {
+  const breakdown: BreakdownItem[] = [];
+
+  // 1. Process Standard Phases
+  standardPhases.forEach(item => {
     const phaseName = item.type;
     const pWeight = PHASE_WEIGHTS[phaseName as keyof typeof PHASE_WEIGHTS] || 0;
-    const phaseTotal = totalPrice * (pWeight / totalPhaseWeight);
+
+    // Avoid division by zero if all weights are 0
+    const phaseTotal = totalPhaseWeight > 0
+      ? distributableTotal * (pWeight / totalPhaseWeight)
+      : 0;
 
     const typoPrices: Record<string, number> = {};
     Object.keys(typologies).forEach(tKey => {
@@ -282,13 +307,44 @@ export const calculateBreakdown = (
       typoPrices[tKey] = (phaseTotal / totalWeight) * timeWeight;
     });
 
-    return {
-      id: item.id, // Use the persistent UUID from the PhaseItem
+    breakdown.push({
+      id: item.id,
       phase: phaseName,
       totalPhase: phaseTotal,
       typologies: typoPrices
-    };
+    });
   });
 
-  return breakdown;
+  // 2. Process Template Phases
+  templatePhases.forEach(item => {
+    const phaseTotal = item.templatePrice || 0;
+
+    // Distribute fixed phase total across typologies too, so the Grid totals match
+    const typoPrices: Record<string, number> = {};
+    Object.keys(typologies).forEach(tKey => {
+      const unitsPerDay = typoRates[tKey as keyof typeof typoRates] || 5;
+      const timeWeight = 1 / unitsPerDay;
+      // Same distribution logic for fixed costs
+      typoPrices[tKey] = (phaseTotal / totalWeight) * timeWeight;
+    });
+
+    breakdown.push({
+      id: item.id,
+      phase: item.type,
+      totalPhase: phaseTotal,
+      typologies: typoPrices,
+      templateItems: item.templateItems
+    });
+  });
+
+  // Sort? Maybe keep order of activePhases?
+  // Current logic appends templates at end.
+  // If we want to respect activePhases order, we should iterate normalizedPhases directly.
+  // But calculating distributableTotal requires knowing all templates first.
+  // So current Approach (Standard then Template) is safer for calculation, 
+  // but might mess up UI order if user interleaved them.
+  // Let's Re-Sort based on normalizedPhases order
+  const orderedBreakdown = normalizedPhases.map(p => breakdown.find(b => b.id === p.id)).filter(b => !!b) as BreakdownItem[];
+
+  return orderedBreakdown;
 };

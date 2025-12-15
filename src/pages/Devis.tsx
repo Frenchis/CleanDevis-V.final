@@ -34,6 +34,7 @@ export const Devis = () => {
   const [activePhases, setActivePhases] = useState<PhaseItem[]>([]); // Default for standalone
   const [targetPrice, setTargetPrice] = useState<number | ''>(0);
   const [breakdown, setBreakdown] = useState<BreakdownItem[]>([]);
+  const [availableTemplates, setAvailableTemplates] = useState<any[]>([]); // New state for templates
   const [calculatedTotal, setCalculatedTotal] = useState<number>(0);
   const [projectName, setProjectName] = useState<string>("Nouveau Projet");
   const [subject, setSubject] = useState<string>("");
@@ -178,7 +179,25 @@ export const Devis = () => {
         setActivePhases(items);
       }
     } else {
-      // Try to load from localStorage (Legacy support)
+      // This `else` block handles cases where there's no project in location state.
+      // It will now also fetch templates and then try to load from localStorage.
+    }
+    setIsInitialized(true);
+  }, [location]);
+
+  // Fetch templates on component mount
+  useEffect(() => {
+    fetchTemplates();
+  }, []);
+
+  const fetchTemplates = async () => {
+    const { data } = await supabase.from('quote_templates').select('id, name, items');
+    if (data) setAvailableTemplates(data);
+  };
+
+  // Load from nav state or localStorage (Legacy support)
+  useEffect(() => {
+    if (!location.state?.project) { // Only load from localStorage if not initialized from nav state
       const savedData = localStorage.getItem('devis_data');
       if (savedData) {
         try {
@@ -574,6 +593,35 @@ export const Devis = () => {
   const isDiffSignificant = Math.abs(diff) > 5;
   const totalLogements = (Object.values(typologies) as (number | '')[]).reduce((a, b) => (typeof a === 'number' ? a : 0) + (typeof b === 'number' ? b : 0), 0) as number;
 
+  const handleToggleTemplate = (template: any) => {
+    const isActive = activePhases.some(p => p.type === template.name && p.isTemplate);
+    const totalPrice = template.items.reduce((sum: number, item: any) => {
+      return sum + ((item.price === '' ? 0 : item.price) * item.quantity);
+    }, 0);
+
+    if (isActive) {
+      setActivePhases(prev => prev.filter(p => p.type !== template.name));
+      if (targetPrice !== '' && targetPrice > 0) {
+        setTargetPrice(Math.max(0, Number(targetPrice) - totalPrice));
+      }
+    } else {
+      setActivePhases(prev => {
+        const newItem: PhaseItem = {
+          id: crypto.randomUUID(),
+          type: template.name,
+          isTemplate: true,
+          templatePrice: totalPrice,
+          templateItems: template.items
+        };
+        return [...prev, newItem];
+      });
+
+      if (targetPrice !== '' && targetPrice > 0) {
+        setTargetPrice(Number(targetPrice) + totalPrice);
+      }
+    }
+  };
+
   return (
     <div className="p-6 max-w-[1600px] mx-auto pb-20">
 
@@ -714,16 +762,8 @@ export const Devis = () => {
               )}
             </div>
 
-            <div className="mt-4 flex gap-4">
-              <div className="flex-grow">
-                <RichTextTextarea
-                  label="Objet du Devis"
-                  value={subject}
-                  onChangeValue={setSubject}
-                  placeholder="Ex: Nettoyage de fin de chantier - Résidence Les Fleurs"
-                />
-              </div>
-              <div className="w-1/3">
+            <div className="mt-4 flex flex-col gap-4">
+              <div>
                 <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Réf. Client</label>
                 <input
                   type="text"
@@ -731,6 +771,14 @@ export const Devis = () => {
                   onChange={(e) => setClientReference(e.target.value)}
                   placeholder="Ex: BC-2024-001"
                   className="w-full bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-blue/20 focus:border-brand-blue outline-none transition-all placeholder-slate-400"
+                />
+              </div>
+              <div>
+                <RichTextTextarea
+                  label="Objet du Devis"
+                  value={subject}
+                  onChangeValue={setSubject}
+                  placeholder="Ex: Nettoyage de fin de chantier - Résidence Les Fleurs"
                 />
               </div>
             </div>
@@ -872,6 +920,40 @@ export const Devis = () => {
               );
             })}
           </div>
+
+          {/* Templates Section */}
+          {availableTemplates.length > 0 && (
+            <div className="mt-6 border-t border-slate-200 dark:border-slate-700 pt-6">
+              <h4 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">Modèles Enregistrés</h4>
+              <div className="flex flex-wrap gap-2">
+                {availableTemplates.map(template => {
+                  const isActive = activePhases.some(p => p.type === template.name);
+                  return (
+                    <button
+                      key={template.id}
+                      onClick={() => handleToggleTemplate(template)}
+                      className={`
+                        group relative w-full flex items-center justify-between p-3 rounded-xl border transition-all duration-300
+                        ${isActive
+                          ? 'bg-blue-50 dark:bg-blue-900/20 border-brand-blue shadow-md'
+                          : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-brand-blue/50 hover:shadow-lg'}
+                        `}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-lg ${isActive ? 'bg-brand-blue text-white' : 'bg-brand-blue/10 text-brand-blue'} group-hover:scale-110 transition-transform`}>
+                          <CloudLightning className="w-4 h-4" />
+                        </div>
+                        <span className={`font-bold text-sm ${isActive ? 'text-brand-blue' : 'text-slate-700 dark:text-slate-200'}`}>{template.name}</span>
+                      </div>
+                      <div className="text-xs font-mono font-bold text-slate-500 bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded-md">
+                        {(template.items.reduce((s: number, i: any) => s + ((i.price || 0) * i.quantity), 0)).toLocaleString()} €
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* 4. GRILLE TARIFAIRE (Bottom) - 12 cols */}
@@ -982,9 +1064,7 @@ export const Devis = () => {
             </div>
           )}
         </div>
-
       </div>
     </div>
-
   );
 };
