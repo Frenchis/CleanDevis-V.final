@@ -37,6 +37,7 @@ export const Devis = () => {
   const [calculatedTotal, setCalculatedTotal] = useState<number>(0);
   const [projectName, setProjectName] = useState<string>("Nouveau Projet");
   const [subject, setSubject] = useState<string>("");
+  const [clientReference, setClientReference] = useState<string>("");
 
   const [isInitialized, setIsInitialized] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -148,6 +149,7 @@ export const Devis = () => {
       setProjectData(proj);
       setProjectName(proj.name);
       setSubject(proj.subject || proj.name); // Default subject to name if empty
+      setClientReference(proj.clientReference || "");
       setTypologies(proj.typologies as unknown as { [key: string]: number | '' });
 
       // If we have a calculated price, use it as target
@@ -195,6 +197,7 @@ export const Devis = () => {
           if (parsed.targetPrice) setTargetPrice(parsed.targetPrice);
           if (parsed.projectName) setProjectName(parsed.projectName);
           if (parsed.subject) setSubject(parsed.subject);
+          if (parsed.clientReference) setClientReference(parsed.clientReference);
           if (parsed.projectData) setProjectData(parsed.projectData);
         } catch (e) {
           console.error("Failed to parse saved devis data", e);
@@ -224,19 +227,39 @@ export const Devis = () => {
 
       // Calculate breakdown even if totalUnits is 0 (Global mode)
       const bd = calculateBreakdown(safeTargetPrice, safeTypologies, activePhases);
-      setBreakdown(bd);
+
+      // Round to nearest 5 helper
+      const roundToFive = (num: number) => Math.round(num / 5) * 5;
+
+      const roundedBd = bd.map(item => {
+        const roundedTypologies = Object.fromEntries(
+          Object.entries(item.typologies).map(([k, v]) => [k, roundToFive(v)])
+        );
+
+        let newTotal = 0;
+        if (totalUnits > 0) {
+          Object.entries(roundedTypologies).forEach(([t, price]) => {
+            const count = safeTypologies[t] || 0;
+            const safeCount = typeof count === 'number' ? count : 0;
+            newTotal += price * safeCount;
+          });
+        } else {
+          newTotal = roundToFive(item.totalPhase);
+        }
+
+        return {
+          ...item,
+          typologies: roundedTypologies,
+          totalPhase: newTotal
+        };
+      });
+
+      setBreakdown(roundedBd);
 
       // Calculate effective total (Verification)
       let total = 0;
-      bd.forEach(phase => {
-        if (totalUnits > 0) {
-          (Object.entries(safeTypologies) as [string, number][]).forEach(([type, count]) => {
-            total += (phase.typologies[type] || 0) * count;
-          });
-        } else {
-          // In global mode, we just sum the phase totals
-          total += phase.totalPhase;
-        }
+      roundedBd.forEach(phase => {
+        total += phase.totalPhase;
       });
       setCalculatedTotal(total);
 
@@ -356,6 +379,7 @@ export const Devis = () => {
       setCalculatedTotal(0);
       setProjectName("Nouveau Projet");
       setSubject("");
+      setClientReference("");
     }
   };
 
@@ -392,6 +416,7 @@ export const Devis = () => {
       id: targetId,
       name: projectName,
       subject: subject || projectName,
+      clientReference: clientReference,
       typologies: safeTypologies,
       surfaceArea: safeSurfaceArea,
       activePhases: activePhases,
@@ -474,7 +499,8 @@ export const Devis = () => {
         activePhases: activePhases, // FIX: Pass current active phases (including duplicates)
         nbLogements: totalApartments, // Update with current total
         surfaceArea: safeSurfaceArea, // Update with current surface area
-        subject: subject || projectName
+        subject: subject || projectName,
+        clientReference: clientReference
       };
 
       // We need to pass the current solution price if we want it to match exactly?
@@ -688,13 +714,25 @@ export const Devis = () => {
               )}
             </div>
 
-            <div className="mt-4">
-              <RichTextTextarea
-                label="Objet du Devis"
-                value={subject}
-                onChangeValue={setSubject}
-                placeholder="Ex: Nettoyage de fin de chantier - Résidence Les Fleurs"
-              />
+            <div className="mt-4 flex gap-4">
+              <div className="flex-grow">
+                <RichTextTextarea
+                  label="Objet du Devis"
+                  value={subject}
+                  onChangeValue={setSubject}
+                  placeholder="Ex: Nettoyage de fin de chantier - Résidence Les Fleurs"
+                />
+              </div>
+              <div className="w-1/3">
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Réf. Client</label>
+                <input
+                  type="text"
+                  value={clientReference}
+                  onChange={(e) => setClientReference(e.target.value)}
+                  placeholder="Ex: BC-2024-001"
+                  className="w-full bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-blue/20 focus:border-brand-blue outline-none transition-all placeholder-slate-400"
+                />
+              </div>
             </div>
 
             <div>
@@ -879,8 +917,9 @@ export const Devis = () => {
                             <div className="relative group inline-block">
                               <input
                                 type="number"
+                                step="5"
                                 className="w-32 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg pl-3 pr-8 py-2 text-right text-slate-900 dark:text-slate-200 font-mono focus:bg-white dark:focus:bg-slate-800 focus:border-brand-green focus:ring-2 focus:ring-brand-green/20 outline-none transition-all"
-                                value={item.typologies[t] ? Number(item.typologies[t]).toFixed(2) : 0}
+                                value={item.typologies[t] || 0}
                                 onChange={(e) => handleUnitPriceChange(item.id, t, parseFloat(e.target.value) || 0)}
                               />
                               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 dark:text-slate-500 pointer-events-none">€</span>
@@ -892,8 +931,9 @@ export const Devis = () => {
                           <div className="relative group max-w-[200px] mx-auto">
                             <input
                               type="number"
+                              step="5"
                               className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg pl-3 pr-8 py-2 text-right text-slate-900 dark:text-slate-200 font-mono focus:bg-white dark:focus:bg-slate-800 focus:border-brand-green focus:ring-2 focus:ring-brand-green/20 outline-none transition-all"
-                              value={Math.round(item.totalPhase)}
+                              value={item.totalPhase}
                               onChange={(e) => handleGlobalPhaseChange(item.id, parseFloat(e.target.value) || 0)}
                             />
                             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 dark:text-slate-500 pointer-events-none">€</span>

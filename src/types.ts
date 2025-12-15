@@ -63,6 +63,7 @@ export interface ProjectData {
   id: string;
   name: string;
   subject?: string; // Objet du devis (Sellsy)
+  clientReference?: string; // Reference client (ex: Num bon de commande)
   date: string;
   client: string;
   sellsyClientId?: string;
@@ -183,6 +184,7 @@ export interface SellsyEstimate {
   related: { type: 'company' | 'individual'; id: number }[];
   contactId?: string; // Main contact ID
   subject: string;
+  client_reference?: string; // Client Ref (ex: Num bon de commande)
   currency: string; // "EUR"
   rows: SellsyEstimateLine[];
   settings?: {

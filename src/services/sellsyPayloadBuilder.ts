@@ -124,6 +124,7 @@ export const buildEstimatePayload = async (project: ProjectData, clientId: strin
             id: parseInt(clientId) || 0 // Safe parse
         }],
         subject: cleanSubject,
+        client_reference: project.clientReference, // Added client reference
         currency: 'EUR',
         rows: lines,
         settings: {
