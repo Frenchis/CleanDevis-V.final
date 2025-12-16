@@ -440,7 +440,7 @@ export const Matrix = () => {
                                                                                 </div>
                                                                                 <div className="flex justify-between gap-2 text-[10px] text-slate-400">
                                                                                     <span>Cadence :</span>
-                                                                                    <span className="font-mono text-white">{colValues[colIdx]} m²/j</span>
+                                                                                    <span className="font-mono text-white">{matrixSurface.colValues[colIdx]} m²/j</span>
                                                                                 </div>
                                                                                 <div className="flex justify-between gap-2 text-[10px] text-slate-400 border-b border-emerald-500/20 pb-1">
                                                                                     <span>Durée Projet :</span>
@@ -559,7 +559,7 @@ export const Matrix = () => {
                                                                                 </div>
                                                                                 <div className="flex justify-between gap-2 text-[10px] text-slate-400">
                                                                                     <span>Cadence :</span>
-                                                                                    <span className="font-mono text-white">{colValues[colIdx]} u/j</span>
+                                                                                    <span className="font-mono text-white">{matrixLogement.colValues[colIdx]} u/j</span>
                                                                                 </div>
                                                                                 <div className="flex justify-between gap-2 text-[10px] text-slate-400 border-b border-emerald-500/20 pb-1">
                                                                                     <span>Durée Projet :</span>
@@ -619,3 +619,19 @@ export const Matrix = () => {
                                 </div>
                             </div>
                         )}
+                    </div>
+                </div>
+            )}
+
+            <MatrixSettingsModal
+                isOpen={isSettingsOpen}
+                onClose={() => setIsSettingsOpen(false)}
+                prixM2Config={prixM2Config}
+                prixLogementConfig={prixLogementConfig}
+                m2JourConfig={m2JourConfig}
+                logementsJourConfig={logementsJourConfig}
+                onSaveConfigs={handleSaveConfigs}
+            />
+        </div>
+    );
+};
