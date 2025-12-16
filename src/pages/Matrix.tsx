@@ -114,19 +114,20 @@ export const Matrix = () => {
                 // 2. Total Cost
                 const totalCost = totalDays * safePrixJour;
 
-                // 3. Normalize to Single Phase Cost for Comparison with Unit Price
-                const prixProdPhase = totalCost / phases;
+                // User Request: Green Price = Total Project Cost (e.g. 10 days * 840 = 8400)
+                // Do NOT divide by phases here.
+                const prixProd = totalCost;
 
-                const ecart = prixMarchePhase > 0 ? Math.abs((prixProdPhase - prixMarchePhase) / prixMarchePhase * 100) : Infinity;
+                const ecart = prixMarchePhase > 0 ? Math.abs((prixProd - prixMarchePhase) / prixMarchePhase * 100) : Infinity;
 
                 if (ecart < bestCell.ecart) {
-                    bestCell = { ecart, row: rowIdx, col: colIdx, prixProd: prixProdPhase, prixMarche: prixMarchePhase };
+                    bestCell = { ecart, row: rowIdx, col: colIdx, prixProd, prixMarche: prixMarchePhase };
                 }
 
                 return {
-                    prixProd: Math.round(prixProdPhase),
+                    prixProd: Math.round(prixProd),
                     prixMarche: Math.round(prixMarchePhase),
-                    totalCost: Math.round(totalCost), // For tooltips
+                    totalCost: Math.round(totalCost), // Same as prixProd now
                     totalDays,
                     ecart,
                     rowVal
@@ -151,6 +152,7 @@ export const Matrix = () => {
 
         const rows = rowValues.map((rowVal, rowIdx) => {
             // REVENUE (Marché) METHOD: Units * Price
+            // Assuming this should also be Input * Price (Per Phase Units * Price)
             const prixMarchePhase = safeNbLogements * rowVal;
 
             const cells = colValues.map((colVal, colIdx) => {
@@ -161,19 +163,19 @@ export const Matrix = () => {
                 // 2. Total Cost
                 const totalCost = totalDays * safePrixJour;
 
-                // 3. Normalize to Single Phase Cost
-                const prixProdPhase = totalCost / phases;
+                // Consistent with Surface Matrix: Show Total Cost
+                const prixProd = totalCost;
 
-                const ecart = prixMarchePhase > 0 ? Math.abs((prixProdPhase - prixMarchePhase) / prixMarchePhase * 100) : Infinity;
+                const ecart = prixMarchePhase > 0 ? Math.abs((prixProd - prixMarchePhase) / prixMarchePhase * 100) : Infinity;
 
                 if (ecart < bestCell.ecart) {
-                    bestCell = { ecart, row: rowIdx, col: colIdx, prixProd: prixProdPhase, prixMarche: prixMarchePhase };
+                    bestCell = { ecart, row: rowIdx, col: colIdx, prixProd, prixMarche: prixMarchePhase };
                 }
 
                 return {
-                    prixProd: Math.round(prixProdPhase),
+                    prixProd: Math.round(prixProd),
                     prixMarche: Math.round(prixMarchePhase),
-                    totalCost: Math.round(totalCost), // For tooltips
+                    totalCost: Math.round(totalCost),
                     totalDays,
                     ecart,
                     rowVal
@@ -424,40 +426,51 @@ export const Matrix = () => {
                                                                 className={`p-0 text-center border-b border-r border-slate-100 dark:border-slate-800 last:border-r-0 ${cellClass}`}
                                                             >
                                                                 <Tooltip
-                                                                    className="min-w-[220px]"
+                                                                    className="min-w-[240px]"
                                                                     content={
-                                                                        <div className="space-y-2">
-                                                                            <div className="font-bold border-b border-slate-700 pb-1 mb-1">Détails Calcul</div>
-                                                                            <div className="space-y-1 bg-slate-800/20 p-2 rounded">
-                                                                                <div className="flex justify-between gap-4">
-                                                                                    <span className="text-slate-400">Total (Temps):</span>
-                                                                                    <span className="font-mono font-bold text-white">{cell.totalCost.toLocaleString('fr-FR')} €</span>
+                                                                        <div className="space-y-3">
+                                                                            <div className="font-bold border-b border-slate-700 pb-1 mb-1 text-xs uppercase tracking-wider text-slate-400">Détails Calcul</div>
+
+                                                                            {/* Section Cadence */}
+                                                                            <div className="space-y-1 bg-emerald-500/10 p-2 rounded border border-emerald-500/20">
+                                                                                <div className="text-[10px] font-bold text-emerald-400 uppercase mb-1">Méthode Cadence</div>
+                                                                                <div className="flex justify-between gap-2 text-[10px] text-slate-400">
+                                                                                    <span>Surface Totale :</span>
+                                                                                    <span className="font-mono text-white">{totalSurfaceProject.toLocaleString()} m²</span>
                                                                                 </div>
-                                                                                <div className="text-[10px] text-slate-500 pl-2 opacity-80 leading-tight">
-                                                                                    Calculé sur {Number(cell.totalDays).toFixed(1)}j (Projet complet)
+                                                                                <div className="flex justify-between gap-2 text-[10px] text-slate-400">
+                                                                                    <span>Cadence :</span>
+                                                                                    <span className="font-mono text-white">{colValues[colIdx]} m²/j</span>
+                                                                                </div>
+                                                                                <div className="flex justify-between gap-2 text-[10px] text-slate-400 border-b border-emerald-500/20 pb-1">
+                                                                                    <span>Durée Projet :</span>
+                                                                                    <span className="font-mono text-white">{Number(cell.totalDays).toFixed(1)} jours</span>
+                                                                                </div>
+                                                                                <div className="flex justify-between gap-2 pt-1 font-bold">
+                                                                                    <span className="text-emerald-400">Prix Cadence :</span>
+                                                                                    <span className="font-mono text-white">{cell.prixProd.toLocaleString('fr-FR')} €</span>
                                                                                 </div>
                                                                             </div>
 
-                                                                            <div className="space-y-1 mt-2">
-                                                                                <div className="flex justify-between gap-4">
-                                                                                    <span className="text-slate-300">Prix via Cadence:</span>
-                                                                                    <span className="font-mono font-bold text-emerald-400">{cell.prixProd.toLocaleString('fr-FR')} €</span>
+                                                                            {/* Section Surface */}
+                                                                            <div className="space-y-1 bg-violet-500/10 p-2 rounded border border-violet-500/20">
+                                                                                <div className="text-[10px] font-bold text-violet-400 uppercase mb-1">Méthode Surface</div>
+                                                                                <div className="flex justify-between gap-2 text-[10px] text-slate-400">
+                                                                                    <span>Surface Projet :</span>
+                                                                                    <span className="font-mono text-white">{safeSurface.toLocaleString()} m²</span>
                                                                                 </div>
-                                                                                <div className="text-[10px] text-right text-slate-500 italic pb-1">
-                                                                                    (Total / Phases)
+                                                                                <div className="flex justify-between gap-2 text-[10px] text-slate-400 border-b border-violet-500/20 pb-1">
+                                                                                    <span>Prix Unitaire :</span>
+                                                                                    <span className="font-mono text-white">{row.rowVal} €/m²</span>
                                                                                 </div>
-
-                                                                                <div className="flex justify-between gap-4 border-t border-slate-700/50 pt-1">
-                                                                                    <span className="text-slate-300">Prix via Surface:</span>
-                                                                                    <span className="font-mono font-bold text-violet-400">{cell.prixMarche.toLocaleString('fr-FR')} €</span>
-                                                                                </div>
-                                                                                <div className="text-[10px] text-right text-slate-500 italic">
-                                                                                    (Surface Prj * Prix m²)
+                                                                                <div className="flex justify-between gap-2 pt-1 font-bold">
+                                                                                    <span className="text-violet-400">Prix Surface :</span>
+                                                                                    <span className="font-mono text-white">{cell.prixMarche.toLocaleString('fr-FR')} €</span>
                                                                                 </div>
                                                                             </div>
 
-                                                                            <div className="pt-2 border-t border-slate-700 flex justify-between gap-4 mt-2">
-                                                                                <span className="text-slate-300">Écart:</span>
+                                                                            <div className="pt-2 border-t border-slate-700 flex justify-between gap-4">
+                                                                                <span className="text-slate-300">Écart :</span>
                                                                                 <span className={`font-bold ${ecart <= 10 ? 'text-emerald-400' : ecart <= 20 ? 'text-amber-400' : 'text-red-400'}`}>
                                                                                     {ecart.toFixed(1)}%
                                                                                 </span>
@@ -532,40 +545,51 @@ export const Matrix = () => {
                                                                 className={`p-0 text-center border-b border-r border-slate-100 dark:border-slate-800 last:border-r-0 ${cellClass}`}
                                                             >
                                                                 <Tooltip
-                                                                    className="min-w-[220px]"
+                                                                    className="min-w-[240px]"
                                                                     content={
-                                                                        <div className="space-y-2">
-                                                                            <div className="font-bold border-b border-slate-700 pb-1 mb-1">Détails Calcul</div>
-                                                                            <div className="space-y-1 bg-slate-800/20 p-2 rounded">
-                                                                                <div className="flex justify-between gap-4">
-                                                                                    <span className="text-slate-400">Total (Temps):</span>
-                                                                                    <span className="font-mono font-bold text-white">{cell.totalCost.toLocaleString('fr-FR')} €</span>
+                                                                        <div className="space-y-3">
+                                                                            <div className="font-bold border-b border-slate-700 pb-1 mb-1 text-xs uppercase tracking-wider text-slate-400">Détails Calcul</div>
+
+                                                                            {/* Section Cadence */}
+                                                                            <div className="space-y-1 bg-emerald-500/10 p-2 rounded border border-emerald-500/20">
+                                                                                <div className="text-[10px] font-bold text-emerald-400 uppercase mb-1">Méthode Cadence</div>
+                                                                                <div className="flex justify-between gap-2 text-[10px] text-slate-400">
+                                                                                    <span>Volume Total :</span>
+                                                                                    <span className="font-mono text-white">{totalUnitsProject.toLocaleString()} u</span>
                                                                                 </div>
-                                                                                <div className="text-[10px] text-slate-500 pl-2 opacity-80 leading-tight">
-                                                                                    Calculé sur {Number(cell.totalDays).toFixed(1)}j (Projet complet)
+                                                                                <div className="flex justify-between gap-2 text-[10px] text-slate-400">
+                                                                                    <span>Cadence :</span>
+                                                                                    <span className="font-mono text-white">{colValues[colIdx]} u/j</span>
+                                                                                </div>
+                                                                                <div className="flex justify-between gap-2 text-[10px] text-slate-400 border-b border-emerald-500/20 pb-1">
+                                                                                    <span>Durée Projet :</span>
+                                                                                    <span className="font-mono text-white">{Number(cell.totalDays).toFixed(1)} jours</span>
+                                                                                </div>
+                                                                                <div className="flex justify-between gap-2 pt-1 font-bold">
+                                                                                    <span className="text-emerald-400">Prix Cadence :</span>
+                                                                                    <span className="font-mono text-white">{cell.prixProd.toLocaleString('fr-FR')} €</span>
                                                                                 </div>
                                                                             </div>
 
-                                                                            <div className="space-y-1 mt-2">
-                                                                                <div className="flex justify-between gap-4">
-                                                                                    <span className="text-slate-300">Prix via Cadence:</span>
-                                                                                    <span className="font-mono font-bold text-emerald-400">{cell.prixProd.toLocaleString('fr-FR')} €</span>
+                                                                            {/* Section Unitaire */}
+                                                                            <div className="space-y-1 bg-violet-500/10 p-2 rounded border border-violet-500/20">
+                                                                                <div className="text-[10px] font-bold text-violet-400 uppercase mb-1">Méthode Unitaire</div>
+                                                                                <div className="flex justify-between gap-2 text-[10px] text-slate-400">
+                                                                                    <span>Logements :</span>
+                                                                                    <span className="font-mono text-white">{safeNbLogements.toLocaleString()} u</span>
                                                                                 </div>
-                                                                                <div className="text-[10px] text-right text-slate-500 italic pb-1">
-                                                                                    (Total / Phases)
+                                                                                <div className="flex justify-between gap-2 text-[10px] text-slate-400 border-b border-violet-500/20 pb-1">
+                                                                                    <span>Prix Unitaire :</span>
+                                                                                    <span className="font-mono text-white">{row.rowVal} €/u</span>
                                                                                 </div>
-
-                                                                                <div className="flex justify-between gap-4 border-t border-slate-700/50 pt-1">
-                                                                                    <span className="text-slate-300">Prix via {safeSurface > 0 ? 'Surface' : 'Unité'}:</span>
-                                                                                    <span className="font-mono font-bold text-violet-400">{cell.prixMarche.toLocaleString('fr-FR')} €</span>
-                                                                                </div>
-                                                                                <div className="text-[10px] text-right text-slate-500 italic">
-                                                                                    ({safeSurface > 0 ? 'Surf Prj' : 'Log Inputs'} * Prix)
+                                                                                <div className="flex justify-between gap-2 pt-1 font-bold">
+                                                                                    <span className="text-violet-400">Prix Unitaire :</span>
+                                                                                    <span className="font-mono text-white">{cell.prixMarche.toLocaleString('fr-FR')} €</span>
                                                                                 </div>
                                                                             </div>
 
-                                                                            <div className="pt-2 border-t border-slate-700 flex justify-between gap-4 mt-2">
-                                                                                <span className="text-slate-300">Écart:</span>
+                                                                            <div className="pt-2 border-t border-slate-700 flex justify-between gap-4">
+                                                                                <span className="text-slate-300">Écart :</span>
                                                                                 <span className={`font-bold ${ecart <= 10 ? 'text-emerald-400' : ecart <= 20 ? 'text-amber-400' : 'text-red-400'}`}>
                                                                                     {ecart.toFixed(1)}%
                                                                                 </span>
@@ -595,19 +619,3 @@ export const Matrix = () => {
                                 </div>
                             </div>
                         )}
-                    </div>
-                </div>
-            )}
-
-            <MatrixSettingsModal
-                isOpen={isSettingsOpen}
-                onClose={() => setIsSettingsOpen(false)}
-                prixM2Config={prixM2Config}
-                prixLogementConfig={prixLogementConfig}
-                m2JourConfig={m2JourConfig}
-                logementsJourConfig={logementsJourConfig}
-                onSaveConfigs={handleSaveConfigs}
-            />
-        </div>
-    );
-};
