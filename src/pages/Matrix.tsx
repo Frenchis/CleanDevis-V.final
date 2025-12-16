@@ -550,7 +550,7 @@ export const Matrix = () => {
                                                             <td
                                                                 key={colIdx}
                                                                 className={`p-0 text-center border-b border-r border-slate-100 dark:border-slate-800 last:border-r-0 ${cellClass} ${bestClass}`}
-                                                            >    >
+                                                            >
                                                                 <Tooltip
                                                                     className="min-w-[240px]"
                                                                     content={
