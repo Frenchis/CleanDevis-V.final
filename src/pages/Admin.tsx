@@ -76,7 +76,7 @@ export const Admin = () => {
             type: 'warning'
         })) return;
 
-        const { error } = await supabase.functions.invoke('admin-users', {
+        const { error } = await supabase.functions.invoke('admin-users?action=logout', {
             method: 'POST',
             body: { action: 'logout', userId }
         });
