@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { EyeCatchingButton_v2 } from '../components/ui/shiny-button';
-import { Shield, Users, Plus, Trash2, Loader2, X, Check } from 'lucide-react';
+import { Shield, Users, Plus, Trash2, Loader2, X, Check, LogOut } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { Input } from '../components/Input';
 import { useToast } from '../components/ui/Toast';
@@ -65,6 +65,29 @@ export const Admin = () => {
         } else {
             toast.success("Utilisateur supprimé");
             setUsers(prev => prev.filter(u => u.id !== userId));
+        }
+    };
+
+    const handleLogoutUser = async (userId: string, email: string) => {
+        if (!await confirm({
+            title: 'Déconnecter un utilisateur',
+            message: `Êtes-vous sûr de vouloir déconnecter l'utilisateur ${email} ? Il devra se reconnecter.`,
+            confirmText: 'Déconnecter',
+            type: 'warning'
+        })) return;
+
+        const { error } = await supabase.functions.invoke('admin-users', {
+            method: 'POST',
+            body: { action: 'logout', userId }
+        });
+
+        if (error) {
+            toast.error("Erreur lors de la déconnexion");
+            console.error(error);
+        } else {
+            toast.success("Utilisateur déconnecté (Session invalidée)");
+            // Refresh info if needed, though last_sign_in won't change immediately
+            fetchUsers();
         }
     };
 
@@ -144,7 +167,14 @@ export const Admin = () => {
                                             <td className="py-3 px-4 text-slate-500">
                                                 {user.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleDateString() : '-'}
                                             </td>
-                                            <td className="py-3 px-4 text-right">
+                                            <td className="py-3 px-4 text-right flex items-center justify-end gap-2">
+                                                <button
+                                                    onClick={() => handleLogoutUser(user.id, user.email || '')}
+                                                    className="p-2 text-slate-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg transition-colors"
+                                                    title="Déconnecter (Forcer Reconnexion)"
+                                                >
+                                                    <LogOut className="w-4 h-4" />
+                                                </button>
                                                 <button
                                                     onClick={() => handleDeleteUser(user.id, user.email || '')}
                                                     className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"

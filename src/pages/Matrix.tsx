@@ -87,35 +87,30 @@ export const Matrix = () => {
     }, []);
 
     // Calculate matrix data
-    // RULE: For calculations, we multiply by phases as requested ("x3")
     const safeSurface = surface === '' ? 0 : surface;
     const safeNbLogements = nbLogements === '' ? 0 : nbLogements;
     const safePrixJour = prixJour === '' ? 0 : prixJour;
 
+    // --- LOGIC FOR SURFACE MATRIX (Global Project View) ---
+    // User Input: Surface / Phase
+    // Calculation Bases: Total Project Surface (Surface * Phases)
     const totalSurfaceProject = safeSurface * phases;
-    const totalUnitsProject = safeNbLogements * phases;
 
-    const generateMatrixData = (type: 'surface' | 'logement') => {
-        // Select appropriate arrays
-        const rowValues = type === 'surface' ? prixM2Values : prixLogementValues;
-        const colValues = type === 'surface' ? m2JourValues : logementsJourValues;
-
-        // Select appropriate target total (Surface or Units)
-        const targetTotal = type === 'surface' ? totalSurfaceProject : totalUnitsProject;
+    const generateSurfaceMatrix = () => {
+        const rowValues = prixM2Values;
+        const colValues = m2JourValues;
 
         let bestCell = { ecart: Infinity, row: 0, col: 0, prixProd: 0, prixMarche: 0 };
 
         const rows = rowValues.map((rowVal, rowIdx) => {
-            // Prix Marché (Revenue) = Quantity * UnitPrice
-            // Using Total Project Quantity ensures consistency with Total Cost
-            const prixMarche = targetTotal * rowVal;
+            // REVENUE (Marché): Total Surface * Price/m²
+            const prixMarche = totalSurfaceProject * rowVal;
 
             const cells = colValues.map((colVal, colIdx) => {
-                // Production Cost Calculation
-                // Cadence is usually "Quantity per Day"
-                // Days = TotalQuantity / Cadence
-                // Cost = Days * DailyPrice
-                const nbJours = colVal > 0 ? targetTotal / colVal : Infinity;
+                // COST (Production):
+                // Total Duration = Total Surface / Cadence (m²/day)
+                // Total Cost = Duration * Price/Day
+                const nbJours = colVal > 0 ? totalSurfaceProject / colVal : Infinity;
                 const prixProd = nbJours * safePrixJour;
 
                 const ecart = prixMarche > 0 ? Math.abs((prixProd - prixMarche) / prixMarche * 100) : Infinity;
@@ -128,7 +123,8 @@ export const Matrix = () => {
                     prixProd: Math.round(prixProd),
                     prixMarche: Math.round(prixMarche),
                     ecart,
-                    rowVal // Prix M2 or Prix Unitaire 
+                    rowVal,
+                    nbJours // Added for Tooltip/Reference
                 };
             });
             return { rowVal, cells };
@@ -137,8 +133,60 @@ export const Matrix = () => {
         return { rows, bestCell, colValues, rowValues };
     };
 
-    const matrixSurface = generateMatrixData('surface');
-    const matrixLogement = safeNbLogements > 0 ? generateMatrixData('logement') : null;
+    // --- LOGIC FOR LOGEMENT MATRIX (Per Phase Financials, Total Project Efficiency) ---
+    // User Input: Logements / Phase
+    // Calculation Bases: 
+    // - Efficiency (Days) calculated on TOTAL VOLUME (Logements * Phases)
+    // - Financials (Cost/Rev) displayed per SINGLE PHASE
+    const totalUnitsProject = safeNbLogements * phases;
+
+    const generateLogementMatrix = () => {
+        const rowValues = prixLogementValues;
+        const colValues = logementsJourValues;
+
+        let bestCell = { ecart: Infinity, row: 0, col: 0, prixProd: 0, prixMarche: 0 };
+
+        const rows = rowValues.map((rowVal, rowIdx) => {
+            // REVENUE (Marché): 
+            // Calculated for ONE PHASE only, as requested.
+            // Revenue = (Logements/Phase) * Price/Unit
+            const prixMarchePhase = safeNbLogements * rowVal;
+
+            const cells = colValues.map((colVal, colIdx) => {
+                // COST (Production):
+                // 1. Calculate Total Project Duration to benefit from volume efficiency
+                // Total Days = (logements/phase * phases) / (logements/day)
+                const totalDays = colVal > 0 ? totalUnitsProject / colVal : Infinity;
+
+                // 2. Calculate Total Project Cost
+                const totalCost = totalDays * safePrixJour;
+
+                // 3. Normalize to ONE PHASE
+                // Cost/Phase = Total Cost / Phases
+                const prixProdPhase = totalCost / phases;
+
+                const ecart = prixMarchePhase > 0 ? Math.abs((prixProdPhase - prixMarchePhase) / prixMarchePhase * 100) : Infinity;
+
+                if (ecart < bestCell.ecart) {
+                    bestCell = { ecart, row: rowIdx, col: colIdx, prixProd: prixProdPhase, prixMarche: prixMarchePhase };
+                }
+
+                return {
+                    prixProd: Math.round(prixProdPhase),
+                    prixMarche: Math.round(prixMarchePhase),
+                    ecart,
+                    rowVal,
+                    totalDays // For debug/display
+                };
+            });
+            return { rowVal, cells };
+        });
+
+        return { rows, bestCell, colValues, rowValues };
+    };
+
+    const matrixSurface = generateSurfaceMatrix();
+    const matrixLogement = generateLogementMatrix();
 
     const handleSaveConfigs = async (
         prixM2: { config: RangeConfig, values: number[] },
@@ -193,7 +241,7 @@ export const Matrix = () => {
                     </div>
                     <div>
                         <h1 className="text-xl font-bold text-slate-900 dark:text-white">Matrices de Convergence</h1>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">Rentabilité immédiate (Projet Global)</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">Rentabilité immédiate & Analyse de Cadence</p>
                     </div>
                 </div>
 
@@ -271,20 +319,23 @@ export const Matrix = () => {
 
             {/* RESULTS SUMMARY BAR (Compact) */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-white/40 dark:bg-brand-card/40 border border-slate-200 dark:border-slate-700/30 rounded-xl p-3 flex items-center justify-between px-6">
-                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Meilleur Écart Surface</span>
-                    <div className="flex items-center gap-3">
-                        <span className="text-xl font-bold text-slate-900 dark:text-white">
-                            {matrixSurface.bestCell.ecart !== Infinity
-                                ? `${Math.round((matrixSurface.bestCell.prixProd + matrixSurface.bestCell.prixMarche) / 2).toLocaleString('fr-FR')} €`
-                                : '---'}
-                        </span>
-                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${matrixSurface.bestCell.ecart <= 10 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
-                            {matrixSurface.bestCell.ecart !== Infinity ? `${matrixSurface.bestCell.ecart.toFixed(1)}%` : '-'}
-                        </span>
+                {safeSurface > 0 && (
+                    <div className="bg-white/40 dark:bg-brand-card/40 border border-slate-200 dark:border-slate-700/30 rounded-xl p-3 flex items-center justify-between px-6">
+                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Meilleur Écart Surface</span>
+                        <div className="flex items-center gap-3">
+                            <span className="text-xl font-bold text-slate-900 dark:text-white">
+                                {matrixSurface.bestCell.ecart !== Infinity
+                                    ? `${Math.round((matrixSurface.bestCell.prixProd + matrixSurface.bestCell.prixMarche) / 2).toLocaleString('fr-FR')} €`
+                                    : '---'}
+                            </span>
+                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${matrixSurface.bestCell.ecart <= 10 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                                {matrixSurface.bestCell.ecart !== Infinity ? `${matrixSurface.bestCell.ecart.toFixed(1)}%` : '-'}
+                            </span>
+                        </div>
                     </div>
-                </div>
-                {matrixLogement && (
+                )}
+
+                {safeNbLogements > 0 && (
                     <div className="bg-white/40 dark:bg-brand-card/40 border border-slate-200 dark:border-slate-700/30 rounded-xl p-3 flex items-center justify-between px-6">
                         <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Meilleur Écart Logement</span>
                         <div className="flex items-center gap-3">
@@ -302,207 +353,229 @@ export const Matrix = () => {
             </div>
 
             {/* MATRICES DISPLAY SECTION (Full Width) */}
-            <div className="bento-item bg-white/60 dark:bg-brand-card/60 backdrop-blur-md border border-slate-200 dark:border-slate-700/50 rounded-3xl p-6 shadow-lg">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
-                    <div className="flex items-center gap-2">
-                        <LayoutDashboard className="w-5 h-5 text-violet-500" />
-                        <h2 className="font-bold text-xl text-slate-900 dark:text-white">Analyse Croisée</h2>
-                    </div>
-
-                    {/* Légende */}
-                    <div className="flex flex-wrap items-center gap-3 text-xs bg-slate-100 dark:bg-slate-800/50 p-2 rounded-lg">
+            {(safeSurface > 0 || safeNbLogements > 0) && (
+                <div className="bento-item bg-white/60 dark:bg-brand-card/60 backdrop-blur-md border border-slate-200 dark:border-slate-700/50 rounded-3xl p-6 shadow-lg">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
                         <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded bg-emerald-100 dark:bg-emerald-900/50 border border-emerald-300 dark:border-emerald-700"></div>
-                            <span className="text-slate-600 dark:text-slate-400">Excellent (≤10%)</span>
+                            <LayoutDashboard className="w-5 h-5 text-violet-500" />
+                            <h2 className="font-bold text-xl text-slate-900 dark:text-white">Analyse Croisée</h2>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded bg-amber-100 dark:bg-amber-900/50 border border-amber-300 dark:border-amber-700"></div>
-                            <span className="text-slate-600 dark:text-slate-400">Bon (10-20%)</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"></div>
-                            <span className="text-slate-600 dark:text-slate-400">&gt;20%</span>
-                        </div>
-                    </div>
-                </div>
 
-                <div className="space-y-12">
-                    {/* Matrice A: Surface */}
-                    <div>
-                        <div className="flex items-center gap-2 mb-3">
-                            <TrendingUp className="w-4 h-4 text-violet-500" />
-                            <h3 className="text-sm font-bold text-violet-600 dark:text-violet-400">Matrice Surface (€/m² vs m²/jour)</h3>
-                        </div>
-                        <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
-                            <table className="w-full text-sm">
-                                <thead>
-                                    <tr>
-                                        <th className="bg-slate-50 dark:bg-slate-800 p-3 text-xs font-medium text-slate-500 uppercase tracking-wider border-b border-slate-200 dark:border-slate-700">€ / m²</th>
-                                        {matrixSurface.colValues.map(v => (
-                                            <th key={v} className="bg-slate-50 dark:bg-slate-800 p-3 text-xs font-medium text-slate-500 uppercase tracking-wider border-b border-slate-200 dark:border-slate-700">{v} m²/j</th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {matrixSurface.rows.map((row) => (
-                                        <tr key={row.rowVal} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                                            <td className="p-2 font-bold text-center text-xs text-slate-700 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700/50 bg-slate-50/30 dark:bg-slate-800/30">{row.rowVal.toFixed(2)} €</td>
-                                            {row.cells.map((cell, colIdx) => {
-                                                const ecart = cell.ecart;
-                                                const cellClass = ecart <= 10
-                                                    ? 'bg-emerald-100/80 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300'
-                                                    : ecart <= 20
-                                                        ? 'bg-amber-100/80 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300'
-                                                        : 'text-slate-500 dark:text-slate-500';
-
-                                                return (
-                                                    <td
-                                                        key={colIdx}
-                                                        className={`p-0 text-center border-b border-r border-slate-100 dark:border-slate-800 last:border-r-0 ${cellClass}`}
-                                                    >
-                                                        <Tooltip
-                                                            className="min-w-[200px]"
-                                                            content={
-                                                                <div className="space-y-2">
-                                                                    <div className="font-bold border-b border-slate-700 pb-1 mb-1">Détails du calcul</div>
-                                                                    <div className="space-y-1">
-                                                                        <div className="flex justify-between gap-4">
-                                                                            <span className="text-slate-400">Production (Coût):</span>
-                                                                            <span className="font-mono font-bold text-emerald-400">{cell.prixProd.toLocaleString('fr-FR')} €</span>
-                                                                        </div>
-                                                                        <div className="text-[10px] text-slate-500 pl-2 opacity-80">
-                                                                            ({totalSurfaceProject.toLocaleString('fr-FR')} m²/{matrixSurface.colValues[colIdx]}) x {prixJour}€
-                                                                        </div>
-                                                                    </div>
-                                                                    <div className="space-y-1">
-                                                                        <div className="flex justify-between gap-4">
-                                                                            <span className="text-slate-400">Cible (Rev):</span>
-                                                                            <span className="font-mono font-bold text-violet-400">{cell.prixMarche.toLocaleString('fr-FR')} €</span>
-                                                                        </div>
-                                                                        <div className="text-[10px] text-slate-500 pl-2 opacity-80">
-                                                                            {totalSurfaceProject.toLocaleString('fr-FR')} m² x {row.rowVal} €
-                                                                        </div>
-                                                                    </div>
-                                                                    <div className="pt-2 border-t border-slate-700 flex justify-between gap-4">
-                                                                        <span className="text-slate-300">Écart:</span>
-                                                                        <span className={`font-bold ${ecart <= 10 ? 'text-emerald-400' : ecart <= 20 ? 'text-amber-400' : 'text-red-400'}`}>
-                                                                            {ecart.toFixed(1)}%
-                                                                        </span>
-                                                                    </div>
-                                                                </div>
-                                                            }
-                                                        >
-                                                            <div className="p-2 h-full flex flex-col items-center justify-center gap-0.5">
-                                                                <div className="font-bold text-xs">
-                                                                    {cell.prixProd.toLocaleString('fr-FR')} €
-                                                                </div>
-                                                                <div className="text-[10px] opacity-60">
-                                                                    vs {cell.prixMarche.toLocaleString('fr-FR')}
-                                                                </div>
-                                                                <div className="text-[10px] font-medium opacity-90 scale-90">
-                                                                    {ecart.toFixed(1)}%
-                                                                </div>
-                                                            </div>
-                                                        </Tooltip>
-                                                    </td>
-                                                );
-                                            })}
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    {/* Matrice B: Logement */}
-                    {matrixLogement && (
-                        <div>
-                            <div className="flex items-center gap-2 mb-3">
-                                <TrendingUp className="w-4 h-4 text-violet-500" />
-                                <h3 className="text-sm font-bold text-violet-600 dark:text-violet-400">Matrice Logement (€/u vs u/jour)</h3>
+                        {/* Légende */}
+                        <div className="flex flex-wrap items-center gap-3 text-xs bg-slate-100 dark:bg-slate-800/50 p-2 rounded-lg">
+                            <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded bg-emerald-100 dark:bg-emerald-900/50 border border-emerald-300 dark:border-emerald-700"></div>
+                                <span className="text-slate-600 dark:text-slate-400">Excellent (≤10%)</span>
                             </div>
-                            <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
-                                <table className="w-full text-sm">
-                                    <thead>
-                                        <tr>
-                                            <th className="bg-slate-50 dark:bg-slate-800 p-3 text-xs font-medium text-slate-500 uppercase tracking-wider border-b border-slate-200 dark:border-slate-700">€ / Unité</th>
-                                            {matrixLogement.colValues.map(v => (
-                                                <th key={v} className="bg-slate-50 dark:bg-slate-800 p-3 text-xs font-medium text-slate-500 uppercase tracking-wider border-b border-slate-200 dark:border-slate-700">{v} u/j</th>
-                                            ))}
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {matrixLogement.rows.map((row) => (
-                                            <tr key={row.rowVal} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                                                <td className="p-2 font-bold text-center text-xs text-slate-700 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700/50 bg-slate-50/30 dark:bg-slate-800/30">{row.rowVal.toFixed(0)} €</td>
-                                                {row.cells.map((cell, colIdx) => {
-                                                    const ecart = cell.ecart;
-                                                    const cellClass = ecart <= 10
-                                                        ? 'bg-emerald-100/80 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300'
-                                                        : ecart <= 20
-                                                            ? 'bg-amber-100/80 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300'
-                                                            : 'text-slate-500 dark:text-slate-500';
+                            <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded bg-amber-100 dark:bg-amber-900/50 border border-amber-300 dark:border-amber-700"></div>
+                                <span className="text-slate-600 dark:text-slate-400">Bon (10-20%)</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"></div>
+                                <span className="text-slate-600 dark:text-slate-400">&gt;20%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="space-y-12">
+                        {/* Matrice A: Surface */}
+                        {safeSurface > 0 && (
+                            <div>
+                                <div className="flex items-center gap-2 mb-3">
+                                    <TrendingUp className="w-4 h-4 text-violet-500" />
+                                    <h3 className="text-sm font-bold text-violet-600 dark:text-violet-400">Matrice Surface (€/m² vs Cadence)</h3>
+                                </div>
+                                <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+                                    <table className="w-full text-sm">
+                                        <thead>
+                                            <tr>
+                                                <th className="bg-slate-50 dark:bg-slate-800 p-3 text-xs font-medium text-slate-500 uppercase tracking-wider border-b border-slate-200 dark:border-slate-700">€ / m²</th>
+                                                {matrixSurface.colValues.map(v => {
+                                                    const days = v > 0 ? Math.ceil(totalSurfaceProject / v) : 0;
                                                     return (
-                                                        <td
-                                                            key={colIdx}
-                                                            className={`p-0 text-center border-b border-r border-slate-100 dark:border-slate-800 last:border-r-0 ${cellClass}`}
-                                                        >
-                                                            <Tooltip
-                                                                className="min-w-[200px]"
-                                                                content={
-                                                                    <div className="space-y-2">
-                                                                        <div className="font-bold border-b border-slate-700 pb-1 mb-1">Détails du calcul</div>
-                                                                        <div className="space-y-1">
-                                                                            <div className="flex justify-between gap-4">
-                                                                                <span className="text-slate-400">Production (Coût):</span>
-                                                                                <span className="font-mono font-bold text-emerald-400">{cell.prixProd.toLocaleString('fr-FR')} €</span>
-                                                                            </div>
-                                                                            <div className="text-[10px] text-slate-500 pl-2 opacity-80">
-                                                                                ({totalUnitsProject.toLocaleString('fr-FR')} u/{matrixLogement.colValues[colIdx]}) x {prixJour}€
-                                                                            </div>
-                                                                        </div>
-                                                                        <div className="space-y-1">
-                                                                            <div className="flex justify-between gap-4">
-                                                                                <span className="text-slate-400">Cible (Rev):</span>
-                                                                                <span className="font-mono font-bold text-violet-400">{cell.prixMarche.toLocaleString('fr-FR')} €</span>
-                                                                            </div>
-                                                                            <div className="text-[10px] text-slate-500 pl-2 opacity-80">
-                                                                                {totalUnitsProject.toLocaleString('fr-FR')} u x {row.rowVal} €
-                                                                            </div>
-                                                                        </div>
-                                                                        <div className="pt-2 border-t border-slate-700 flex justify-between gap-4">
-                                                                            <span className="text-slate-300">Écart:</span>
-                                                                            <span className={`font-bold ${ecart <= 10 ? 'text-emerald-400' : ecart <= 20 ? 'text-amber-400' : 'text-red-400'}`}>
-                                                                                {ecart.toFixed(1)}%
-                                                                            </span>
-                                                                        </div>
-                                                                    </div>
-                                                                }
-                                                            >
-                                                                <div className="p-2 h-full flex flex-col items-center justify-center gap-0.5">
-                                                                    <div className="font-bold text-xs">
-                                                                        {cell.prixProd.toLocaleString('fr-FR')} €
-                                                                    </div>
-                                                                    <div className="text-[10px] opacity-60">
-                                                                        vs {cell.prixMarche.toLocaleString('fr-FR')}
-                                                                    </div>
-                                                                    <div className="text-[10px] font-medium opacity-90 scale-90">
-                                                                        {ecart.toFixed(1)}%
-                                                                    </div>
-                                                                </div>
-                                                            </Tooltip>
-                                                        </td>
-                                                    );
+                                                        <th key={v} className="bg-slate-50 dark:bg-slate-800 p-2 text-xs font-medium text-slate-500 uppercase tracking-wider border-b border-slate-200 dark:border-slate-700">
+                                                            <div className="flex flex-col items-center gap-0.5">
+                                                                <span>{v} m²/j</span>
+                                                                <span className="text-[10px] normal-case bg-slate-200 dark:bg-slate-700/50 px-1.5 py-0.5 rounded text-slate-600 dark:text-slate-400 font-normal">
+                                                                    {days}j
+                                                                </span>
+                                                            </div>
+                                                        </th>
+                                                    )
                                                 })}
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                                        </thead>
+                                        <tbody>
+                                            {matrixSurface.rows.map((row) => (
+                                                <tr key={row.rowVal} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                                                    <td className="p-2 font-bold text-center text-xs text-slate-700 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700/50 bg-slate-50/30 dark:bg-slate-800/30">{row.rowVal.toFixed(2)} €</td>
+                                                    {row.cells.map((cell, colIdx) => {
+                                                        const ecart = cell.ecart;
+                                                        const cellClass = ecart <= 10
+                                                            ? 'bg-emerald-100/80 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300'
+                                                            : ecart <= 20
+                                                                ? 'bg-amber-100/80 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300'
+                                                                : 'text-slate-500 dark:text-slate-500';
+
+                                                        return (
+                                                            <td
+                                                                key={colIdx}
+                                                                className={`p-0 text-center border-b border-r border-slate-100 dark:border-slate-800 last:border-r-0 ${cellClass}`}
+                                                            >
+                                                                <Tooltip
+                                                                    className="min-w-[200px]"
+                                                                    content={
+                                                                        <div className="space-y-2">
+                                                                            <div className="font-bold border-b border-slate-700 pb-1 mb-1">Détails Projet (Global)</div>
+                                                                            <div className="space-y-1">
+                                                                                <div className="flex justify-between gap-4">
+                                                                                    <span className="text-slate-400">Production ({Math.round(cell.nbJours)}j):</span>
+                                                                                    <span className="font-mono font-bold text-emerald-400">{cell.prixProd.toLocaleString('fr-FR')} €</span>
+                                                                                </div>
+
+                                                                            </div>
+                                                                            <div className="space-y-1">
+                                                                                <div className="flex justify-between gap-4">
+                                                                                    <span className="text-slate-400">Cible (Rev):</span>
+                                                                                    <span className="font-mono font-bold text-violet-400">{cell.prixMarche.toLocaleString('fr-FR')} €</span>
+                                                                                </div>
+                                                                                <div className="text-[10px] text-slate-500 pl-2 opacity-80">
+                                                                                    {totalSurfaceProject.toLocaleString('fr-FR')} m² x {row.rowVal} €
+                                                                                </div>
+                                                                            </div>
+                                                                            <div className="pt-2 border-t border-slate-700 flex justify-between gap-4">
+                                                                                <span className="text-slate-300">Écart:</span>
+                                                                                <span className={`font-bold ${ecart <= 10 ? 'text-emerald-400' : ecart <= 20 ? 'text-amber-400' : 'text-red-400'}`}>
+                                                                                    {ecart.toFixed(1)}%
+                                                                                </span>
+                                                                            </div>
+                                                                        </div>
+                                                                    }
+                                                                >
+                                                                    <div className="p-2 h-full flex flex-col items-center justify-center gap-0.5">
+                                                                        <div className="font-bold text-xs">
+                                                                            {cell.prixProd.toLocaleString('fr-FR')} €
+                                                                        </div>
+                                                                        {/* <div className="text-[10px] opacity-60">
+                                                                    vs {cell.prixMarche.toLocaleString('fr-FR')}
+                                                                </div> */}
+                                                                        <div className="text-[10px] font-medium opacity-90 scale-90">
+                                                                            {ecart.toFixed(1)}%
+                                                                        </div>
+                                                                    </div>
+                                                                </Tooltip>
+                                                            </td>
+                                                        );
+                                                    })}
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        )}
+
+                        {/* Matrice B: Logement */}
+                        {safeNbLogements > 0 && (
+                            <div>
+                                <div className="flex items-center gap-2 mb-3">
+                                    <TrendingUp className="w-4 h-4 text-violet-500" />
+                                    <h3 className="text-sm font-bold text-violet-600 dark:text-violet-400">Matrice Logement (Prix/Phase vs Cadence Globale)</h3>
+                                </div>
+                                <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+                                    <table className="w-full text-sm">
+                                        <thead>
+                                            <tr>
+                                                <th className="bg-slate-50 dark:bg-slate-800 p-3 text-xs font-medium text-slate-500 uppercase tracking-wider border-b border-slate-200 dark:border-slate-700">€ / Unité</th>
+                                                {matrixLogement.colValues.map(v => {
+                                                    const days = v > 0 ? Math.ceil(totalUnitsProject / v) : 0;
+                                                    return (
+                                                        <th key={v} className="bg-slate-50 dark:bg-slate-800 p-3 text-xs font-medium text-slate-500 uppercase tracking-wider border-b border-slate-200 dark:border-slate-700">
+                                                            <div className="flex flex-col items-center gap-0.5">
+                                                                <span>{v} u/j</span>
+                                                                <span className="text-[10px] normal-case bg-slate-200 dark:bg-slate-700/50 px-1.5 py-0.5 rounded text-slate-600 dark:text-slate-400 font-normal">
+                                                                    {days}j
+                                                                </span>
+                                                            </div>
+                                                        </th>
+                                                    )
+                                                })}
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {matrixLogement.rows.map((row) => (
+                                                <tr key={row.rowVal} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                                                    <td className="p-2 font-bold text-center text-xs text-slate-700 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700/50 bg-slate-50/30 dark:bg-slate-800/30">{row.rowVal.toFixed(0)} €</td>
+                                                    {row.cells.map((cell, colIdx) => {
+                                                        const ecart = cell.ecart;
+                                                        const cellClass = ecart <= 10
+                                                            ? 'bg-emerald-100/80 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300'
+                                                            : ecart <= 20
+                                                                ? 'bg-amber-100/80 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300'
+                                                                : 'text-slate-500 dark:text-slate-500';
+                                                        return (
+                                                            <td
+                                                                key={colIdx}
+                                                                className={`p-0 text-center border-b border-r border-slate-100 dark:border-slate-800 last:border-r-0 ${cellClass}`}
+                                                            >
+                                                                <Tooltip
+                                                                    className="min-w-[200px]"
+                                                                    content={
+                                                                        <div className="space-y-2">
+                                                                            <div className="font-bold border-b border-slate-700 pb-1 mb-1">Détails par Phase</div>
+                                                                            <div className="space-y-1">
+                                                                                <div className="flex justify-between gap-4">
+                                                                                    <span className="text-slate-400">Coût Phase:</span>
+                                                                                    <span className="font-mono font-bold text-emerald-400">{cell.prixProd.toLocaleString('fr-FR')} €</span>
+                                                                                </div>
+                                                                                <div className="text-[10px] text-slate-500 pl-2 opacity-80 leading-tight">
+                                                                                    (Coût Global {Math.ceil(cell.totalDays)}j / {phases})
+                                                                                </div>
+                                                                            </div>
+                                                                            <div className="space-y-1">
+                                                                                <div className="flex justify-between gap-4">
+                                                                                    <span className="text-slate-400">Rev Phase:</span>
+                                                                                    <span className="font-mono font-bold text-violet-400">{cell.prixMarche.toLocaleString('fr-FR')} €</span>
+                                                                                </div>
+                                                                                <div className="text-[10px] text-slate-500 pl-2 opacity-80 leading-tight">
+                                                                                    {safeNbLogements}u x {row.rowVal}€
+                                                                                </div>
+                                                                            </div>
+                                                                            <div className="pt-2 border-t border-slate-700 flex justify-between gap-4">
+                                                                                <span className="text-slate-300">Écart:</span>
+                                                                                <span className={`font-bold ${ecart <= 10 ? 'text-emerald-400' : ecart <= 20 ? 'text-amber-400' : 'text-red-400'}`}>
+                                                                                    {ecart.toFixed(1)}%
+                                                                                </span>
+                                                                            </div>
+                                                                        </div>
+                                                                    }
+                                                                >
+                                                                    <div className="p-2 h-full flex flex-col items-center justify-center gap-0.5">
+                                                                        <div className="font-bold text-xs">
+                                                                            {cell.prixProd.toLocaleString('fr-FR')} €
+                                                                        </div>
+                                                                        {/* <div className="text-[10px] opacity-60">
+                                                                        vs {cell.prixMarche.toLocaleString('fr-FR')}
+                                                                    </div> */}
+                                                                        <div className="text-[10px] font-medium opacity-90 scale-90">
+                                                                            {ecart.toFixed(1)}%
+                                                                        </div>
+                                                                    </div>
+                                                                </Tooltip>
+                                                            </td>
+                                                        );
+                                                    })}
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
-            </div>
+            )}
 
             <MatrixSettingsModal
                 isOpen={isSettingsOpen}

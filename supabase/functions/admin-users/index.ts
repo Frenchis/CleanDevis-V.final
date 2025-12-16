@@ -98,6 +98,30 @@ Deno.serve(async (req) => {
             });
         }
 
+        // --- ACTION: DECONNECTER (LOGOUT) UN UTILISATEUR ---
+        if (req.method === 'POST' && action === 'logout') {
+            const { userId } = body;
+            if (!userId) {
+                console.error("Missing userId");
+                return new Response(JSON.stringify({ error: 'User ID required' }), {
+                    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                    status: 400,
+                });
+            }
+
+            const { error } = await supabaseAdmin.auth.admin.signOut(userId, { scope: 'global' });
+
+            if (error) {
+                console.error("Logout User Error:", error);
+                throw error;
+            }
+
+            return new Response(JSON.stringify({ success: true }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                status: 200,
+            });
+        }
+
         // --- ACTION: SUPPRIMER UN UTILISATEUR ---
         if (req.method === 'DELETE') {
             const { userId } = body;
