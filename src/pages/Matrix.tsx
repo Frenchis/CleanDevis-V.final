@@ -140,8 +140,8 @@ export const Matrix = () => {
     };
 
     // --- LOGIC FOR LOGEMENT MATRIX ---
-    // User Input: Logements = LOG PER PHASE (User convention: "10 Log" -> "Total 30")
-    // Total = Units * Phases
+    // User Input: Logements = TOTAL PROJECT UNITS (User convention: "30 Log" -> "Total 30 in Project")
+    // Total Volume = Units * Phases (Because we pass 3 times in each unit)
     const totalUnitsProject = safeNbLogements * phases;
 
     const generateLogementMatrix = () => {
@@ -152,12 +152,12 @@ export const Matrix = () => {
 
         const rows = rowValues.map((rowVal, rowIdx) => {
             // REVENUE (Marché) METHOD: Units * Price
-            // Assuming this should also be Input * Price (Per Phase Units * Price)
+            // Input is Total Project Units -> So Revenue = Total Units * Unit Price
             const prixMarchePhase = safeNbLogements * rowVal;
 
             const cells = colValues.map((colVal, colIdx) => {
                 // COST (Production) METHOD: Time based
-                // 1. Total Days = Total Units / Cadence
+                // 1. Total Days = Total Work Volume (Units * Phases) / Cadence
                 const totalDays = colVal > 0 ? totalUnitsProject / colVal : Infinity;
 
                 // 2. Total Cost
@@ -265,7 +265,7 @@ export const Matrix = () => {
 
                     {/* Logements */}
                     <div className="flex flex-col px-2">
-                        <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-0.5">Log / Phase</label>
+                        <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-0.5">Logements Projet</label>
                         <input
                             type="number"
                             value={nbLogements}
@@ -409,7 +409,7 @@ export const Matrix = () => {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {matrixSurface.rows.map((row) => (
+                                            {matrixSurface.rows.map((row, rowIdx) => (
                                                 <tr key={row.rowVal} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
                                                     <td className="p-2 font-bold text-center text-xs text-slate-700 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700/50 bg-slate-50/30 dark:bg-slate-800/30">{row.rowVal.toFixed(2)} €</td>
                                                     {row.cells.map((cell, colIdx) => {
@@ -420,10 +420,13 @@ export const Matrix = () => {
                                                                 ? 'bg-amber-100/80 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300'
                                                                 : 'text-slate-500 dark:text-slate-500';
 
+                                                        const isBest = matrixSurface.bestCell.ecart !== Infinity && matrixSurface.bestCell.row === rowIdx && matrixSurface.bestCell.col === colIdx;
+                                                        const bestClass = isBest ? "ring-2 ring-violet-500 ring-offset-2 ring-offset-white dark:ring-offset-slate-900 z-10 rounded shadow-lg transform scale-105 transition-transform" : "";
+
                                                         return (
                                                             <td
                                                                 key={colIdx}
-                                                                className={`p-0 text-center border-b border-r border-slate-100 dark:border-slate-800 last:border-r-0 ${cellClass}`}
+                                                                className={`p-0 text-center border-b border-r border-slate-100 dark:border-slate-800 last:border-r-0 ${cellClass} ${bestClass}`}
                                                             >
                                                                 <Tooltip
                                                                     className="min-w-[240px]"
@@ -529,7 +532,7 @@ export const Matrix = () => {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {matrixLogement.rows.map((row) => (
+                                            {matrixLogement.rows.map((row, rowIdx) => (
                                                 <tr key={row.rowVal} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
                                                     <td className="p-2 font-bold text-center text-xs text-slate-700 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700/50 bg-slate-50/30 dark:bg-slate-800/30">{row.rowVal.toFixed(0)} €</td>
                                                     {row.cells.map((cell, colIdx) => {
@@ -539,10 +542,14 @@ export const Matrix = () => {
                                                             : ecart <= 20
                                                                 ? 'bg-amber-100/80 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300'
                                                                 : 'text-slate-500 dark:text-slate-500';
+
+                                                        const isBest = matrixLogement.bestCell.ecart !== Infinity && matrixLogement.bestCell.row === rowIdx && matrixLogement.bestCell.col === colIdx;
+                                                        const bestClass = isBest ? "ring-2 ring-violet-500 ring-offset-2 ring-offset-white dark:ring-offset-slate-900 z-10 rounded shadow-lg transform scale-105 transition-transform" : "";
+
                                                         return (
                                                             <td
                                                                 key={colIdx}
-                                                                className={`p-0 text-center border-b border-r border-slate-100 dark:border-slate-800 last:border-r-0 ${cellClass}`}
+                                                                className={`p-0 text-center border-b border-r border-slate-100 dark:border-slate-800 last:border-r-0 ${cellClass} ${bestClass}`}
                                                             >
                                                                 <Tooltip
                                                                     className="min-w-[240px]"
@@ -601,7 +608,7 @@ export const Matrix = () => {
                                                                         <div className="font-bold text-xs text-emerald-700 dark:text-emerald-400" title="Prix calculé par la Cadence">
                                                                             {cell.prixProd.toLocaleString('fr-FR')}
                                                                         </div>
-                                                                        <div className="text-[10px] font-medium text-violet-700 dark:text-violet-400 opacity-80" title="Prix calculé par l'unité">
+                                                                        <div className="text-[10px] font-medium text-violet-700 dark:text-violet-400 opacity-80" title="Prix calculé par la Surface">
                                                                             {cell.prixMarche.toLocaleString('fr-FR')}
                                                                         </div>
                                                                         <div className="text-[10px] font-bold opacity-60 scale-90 mt-0.5">
