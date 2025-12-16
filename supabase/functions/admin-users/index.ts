@@ -100,10 +100,14 @@ Deno.serve(async (req) => {
 
         // --- ACTION: DECONNECTER (LOGOUT) UN UTILISATEUR ---
         if (req.method === 'POST' && action === 'logout') {
+            console.log("LOGOUT REQUEST RECEIVED. Body:", JSON.stringify(body));
             const { userId } = body;
             if (!userId) {
-                console.error("Missing userId");
-                return new Response(JSON.stringify({ error: 'User ID required' }), {
+                console.error("Missing userId. Body:", body);
+                return new Response(JSON.stringify({
+                    error: 'User ID required',
+                    receivedBody: body
+                }), {
                     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
                     status: 400,
                 });

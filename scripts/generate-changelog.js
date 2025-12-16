@@ -12,6 +12,18 @@ const OUTPUT_FILE = path.join(__dirname, '../src/data/changelog.json');
 try {
     console.log('Generating changelog from git history...');
 
+    // Attempt to deepen the clone to get more history (fix for Vercel shallow clone)
+    try {
+        // checks if is shallow
+        const isShallow = fs.existsSync(path.join(__dirname, '../.git/shallow'));
+        if (isShallow) {
+            console.log('Shallow clone detected. Attempting to fetch last 100 commits...');
+            execSync('git fetch --depth=100', { stdio: 'ignore' });
+        }
+    } catch (e) {
+        console.warn('Could not fetch more history, continuing with available commits:', e.message);
+    }
+
     // Fetch git log in JSON-like format
     // We use a custom separator ~|~ to avoid issues with quotes in messages
     // Using iso-strict to ensure valid parsing by new Date() in all browsers/environments
