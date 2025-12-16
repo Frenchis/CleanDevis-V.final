@@ -14,14 +14,21 @@ try {
 
     // Attempt to deepen the clone to get more history (fix for Vercel shallow clone)
     try {
-        // checks if is shallow
-        const isShallow = fs.existsSync(path.join(__dirname, '../.git/shallow'));
-        if (isShallow) {
-            console.log('Shallow clone detected. Attempting to fetch last 100 commits...');
-            execSync('git fetch --depth=100', { stdio: 'ignore' });
+        const gitDir = path.join(__dirname, '../.git');
+        if (fs.existsSync(gitDir)) {
+            const isShallow = fs.existsSync(path.join(gitDir, 'shallow'));
+            if (isShallow) {
+                console.log('Shallow clone detected. Attempting to unshallow...');
+                try {
+                    execSync('git fetch --unshallow', { stdio: 'inherit' });
+                } catch (e) {
+                    console.log('Unshallow failed (maybe already unshallow?), trying fetch --depth=100...');
+                    execSync('git fetch --depth=100', { stdio: 'inherit' });
+                }
+            }
         }
     } catch (e) {
-        console.warn('Could not fetch more history, continuing with available commits:', e.message);
+        console.warn('Could not fetch more history:', e.message);
     }
 
     // Fetch git log in JSON-like format

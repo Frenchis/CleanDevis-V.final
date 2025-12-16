@@ -421,7 +421,7 @@ export const Matrix = () => {
                                                                 : 'text-slate-500 dark:text-slate-500';
 
                                                         const isBest = matrixSurface.bestCell.ecart !== Infinity && matrixSurface.bestCell.row === rowIdx && matrixSurface.bestCell.col === colIdx;
-                                                        const bestClass = isBest ? "ring-2 ring-violet-500 ring-offset-2 ring-offset-white dark:ring-offset-slate-900 z-10 rounded shadow-lg transform scale-105 transition-transform" : "";
+                                                        const bestClass = isBest ? "bg-violet-100 dark:bg-violet-900/40 font-bold scale-105 shadow-md z-10" : "";
 
                                                         return (
                                                             <td
@@ -544,13 +544,13 @@ export const Matrix = () => {
                                                                 : 'text-slate-500 dark:text-slate-500';
 
                                                         const isBest = matrixLogement.bestCell.ecart !== Infinity && matrixLogement.bestCell.row === rowIdx && matrixLogement.bestCell.col === colIdx;
-                                                        const bestClass = isBest ? "ring-2 ring-violet-500 ring-offset-2 ring-offset-white dark:ring-offset-slate-900 z-10 rounded shadow-lg transform scale-105 transition-transform" : "";
+                                                        const bestClass = isBest ? "bg-violet-100 dark:bg-violet-900/40 font-bold scale-105 shadow-md z-10" : "";
 
                                                         return (
                                                             <td
                                                                 key={colIdx}
                                                                 className={`p-0 text-center border-b border-r border-slate-100 dark:border-slate-800 last:border-r-0 ${cellClass} ${bestClass}`}
-                                                            >
+                                                            >    >
                                                                 <Tooltip
                                                                     className="min-w-[240px]"
                                                                     content={
