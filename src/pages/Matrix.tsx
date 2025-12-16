@@ -6,22 +6,56 @@ import { MatrixSettingsModal, RangeConfig, generateArray } from '../components/M
 import { supabase } from '../lib/supabaseClient';
 import { useToast } from '../components/ui/Toast';
 
+// --- SKELETON COMPONENT ---
+const MatrixSkeleton = ({ title, icon: Icon }: { title: string, icon: any }) => (
+    <div className="space-y-4">
+        <div className="flex items-center gap-2 mb-3">
+            <Icon className="w-4 h-4 text-slate-300 dark:text-slate-600" />
+            <div className="h-4 w-64 bg-slate-200 dark:bg-slate-700/50 rounded animate-pulse" />
+        </div>
+        <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/20">
+            <div className="flex">
+                <div className="w-20 h-10 bg-slate-100 dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700" />
+                {[1, 2, 3].map(i => (
+                    <div key={i} className="flex-1 h-10 bg-slate-50 dark:bg-slate-800/50 border-r border-slate-200 dark:border-slate-700 last:border-r-0" />
+                ))}
+            </div>
+            {[1, 2, 3, 4, 5].map((row) => (
+                <div key={row} className="flex border-t border-slate-100 dark:border-slate-700/50">
+                    <div className="w-20 h-12 bg-slate-50/50 dark:bg-slate-800/30 border-r border-slate-200 dark:border-slate-700 flex items-center justify-center">
+                        <div className="h-4 w-8 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
+                    </div>
+                    {[1, 2, 3].map(col => (
+                        <div key={col} className="flex-1 h-12 flex items-center justify-center border-r border-slate-100 dark:border-slate-800 last:border-r-0">
+                            <div className="flex flex-col items-center gap-1 w-full px-4">
+                                <div className="h-3 w-16 bg-slate-200 dark:bg-slate-700 rounded-sm animate-pulse" />
+                                <div className="h-2 w-10 bg-slate-100 dark:bg-slate-800 rounded-sm animate-pulse" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            ))}
+        </div>
+    </div>
+);
+
 export const Matrix = () => {
     const toast = useToast();
 
-    // State for Inputs
-    const [nbLogements, setNbLogements] = useState<number | ''>(15);
-    const [surface, setSurface] = useState<number | ''>(1500);
-    const [phases, setPhases] = useState<number>(3); // Phases usually selected via buttons, keeping number
+    // State for Inputs (Empty by default)
+    const [nbLogements, setNbLogements] = useState<number | ''>('');
+    const [surface, setSurface] = useState<number | ''>('');
+    const [phases, setPhases] = useState<number>(3);
     const [prixJour, setPrixJour] = useState<number | ''>(840);
+
+    // Settings & Loading
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
 
-    // Matrix Parameters State (Configurable)
+    // Matrix Parameters State
     const [prixM2Config, setPrixM2Config] = useState<RangeConfig>({ min: 1, max: 4, step: 0.5 });
     const [prixM2Values, setPrixM2Values] = useState<number[]>([1, 1.5, 2, 2.5, 3, 3.5, 4]);
 
-    // NEW: Prix Logement Config
     const [prixLogementConfig, setPrixLogementConfig] = useState<RangeConfig>({ min: 50, max: 200, step: 10 });
     const [prixLogementValues, setPrixLogementValues] = useState<number[]>([50, 60, 70, 80, 90, 100]);
 
@@ -43,24 +77,10 @@ export const Matrix = () => {
 
                 if (data && data.value) {
                     const { prixM2, prixLogement, m2Jour, logementsJour } = data.value;
-
-                    if (prixM2) {
-                        setPrixM2Config(prixM2);
-                        setPrixM2Values(generateArray(prixM2));
-                    }
-                    if (prixLogement) {
-                        setPrixLogementConfig(prixLogement);
-                        setPrixLogementValues(generateArray(prixLogement));
-                    }
-                    if (m2Jour) {
-                        setM2JourConfig(m2Jour);
-                        setM2JourValues(generateArray(m2Jour));
-                    }
-                    if (logementsJour) {
-                        setLogementsJourConfig(logementsJour);
-                        setLogementsJourValues(generateArray(logementsJour));
-                    }
-                    console.log("Loaded Matrix Config from Supabase");
+                    if (prixM2) { setPrixM2Config(prixM2); setPrixM2Values(generateArray(prixM2)); }
+                    if (prixLogement) { setPrixLogementConfig(prixLogement); setPrixLogementValues(generateArray(prixLogement)); }
+                    if (m2Jour) { setM2JourConfig(m2Jour); setM2JourValues(generateArray(m2Jour)); }
+                    if (logementsJour) { setLogementsJourConfig(logementsJour); setLogementsJourValues(generateArray(logementsJour)); }
                 }
             } catch (err) {
                 console.error("Error loading matrix settings:", err);
@@ -68,7 +88,6 @@ export const Matrix = () => {
                 setIsLoading(false);
             }
         };
-
         loadMatrixConfig();
     }, []);
 
@@ -86,156 +105,87 @@ export const Matrix = () => {
         return () => ctx.revert();
     }, []);
 
-    // Calculate matrix data
+    // Helpers
     const safeSurface = surface === '' ? 0 : surface;
     const safeNbLogements = nbLogements === '' ? 0 : nbLogements;
     const safePrixJour = prixJour === '' ? 0 : prixJour;
 
-    // --- LOGIC FOR SURFACE MATRIX ---
-    // User Input: Surface = PROJECT SURFACE (e.g. 3000m²)
-    // Total Volume = Surface * Phases (e.g. 9000m² if 3 phases)
     const totalSurfaceProject = safeSurface * phases;
+    const totalUnitsProject = safeNbLogements * phases;
 
+    // Generators
     const generateSurfaceMatrix = () => {
         const rowValues = prixM2Values;
         const colValues = m2JourValues;
-
         let bestCell = { ecart: Infinity, row: 0, col: 0, prixProd: 0, prixMarche: 0 };
 
         const rows = rowValues.map((rowVal, rowIdx) => {
-            // REVENUE (Marché) METHOD: Surface Project * Price Row
             const prixMarchePhase = safeSurface * rowVal;
-
             const cells = colValues.map((colVal, colIdx) => {
-                // COST (Production) METHOD: Time based
-                // 1. Total Days = (Surface * Phases) / Cadence
                 const totalDays = colVal > 0 ? totalSurfaceProject / colVal : Infinity;
-
-                // 2. Total Cost
                 const totalCost = totalDays * safePrixJour;
-
-                // User Request: Green Price = Total Project Cost (e.g. 10 days * 840 = 8400)
-                // Do NOT divide by phases here.
                 const prixProd = totalCost;
 
                 const ecart = prixMarchePhase > 0 ? Math.abs((prixProd - prixMarchePhase) / prixMarchePhase * 100) : Infinity;
+                if (ecart < bestCell.ecart) bestCell = { ecart, row: rowIdx, col: colIdx, prixProd, prixMarche: prixMarchePhase };
 
-                if (ecart < bestCell.ecart) {
-                    bestCell = { ecart, row: rowIdx, col: colIdx, prixProd, prixMarche: prixMarchePhase };
-                }
-
-                return {
-                    prixProd: Math.round(prixProd),
-                    prixMarche: Math.round(prixMarchePhase),
-                    totalCost: Math.round(totalCost), // Same as prixProd now
-                    totalDays,
-                    ecart,
-                    rowVal
-                };
+                return { prixProd: Math.round(prixProd), prixMarche: Math.round(prixMarchePhase), totalCost: Math.round(totalCost), totalDays, ecart, rowVal };
             });
             return { rowVal, cells };
         });
-
         return { rows, bestCell, colValues, rowValues };
     };
-
-    // --- LOGIC FOR LOGEMENT MATRIX ---
-    // User Input: Logements = TOTAL PROJECT UNITS (User convention: "30 Log" -> "Total 30 in Project")
-    // Total Volume = Units * Phases (Because we pass 3 times in each unit)
-    const totalUnitsProject = safeNbLogements * phases;
 
     const generateLogementMatrix = () => {
         const rowValues = prixLogementValues;
         const colValues = logementsJourValues;
-
         let bestCell = { ecart: Infinity, row: 0, col: 0, prixProd: 0, prixMarche: 0 };
 
         const rows = rowValues.map((rowVal, rowIdx) => {
-            // REVENUE (Marché) METHOD: Units * Price
-            // Input is Total Project Units -> So Revenue = Total Units * Unit Price
             const prixMarchePhase = safeNbLogements * rowVal;
-
             const cells = colValues.map((colVal, colIdx) => {
-                // COST (Production) METHOD: Time based
-                // 1. Total Days = Total Work Volume (Units * Phases) / Cadence
                 const totalDays = colVal > 0 ? totalUnitsProject / colVal : Infinity;
-
-                // 2. Total Cost
                 const totalCost = totalDays * safePrixJour;
-
-                // Consistent with Surface Matrix: Show Total Cost
                 const prixProd = totalCost;
 
                 const ecart = prixMarchePhase > 0 ? Math.abs((prixProd - prixMarchePhase) / prixMarchePhase * 100) : Infinity;
+                if (ecart < bestCell.ecart) bestCell = { ecart, row: rowIdx, col: colIdx, prixProd, prixMarche: prixMarchePhase };
 
-                if (ecart < bestCell.ecart) {
-                    bestCell = { ecart, row: rowIdx, col: colIdx, prixProd, prixMarche: prixMarchePhase };
-                }
-
-                return {
-                    prixProd: Math.round(prixProd),
-                    prixMarche: Math.round(prixMarchePhase),
-                    totalCost: Math.round(totalCost),
-                    totalDays,
-                    ecart,
-                    rowVal
-                };
+                return { prixProd: Math.round(prixProd), prixMarche: Math.round(prixMarchePhase), totalCost: Math.round(totalCost), totalDays, ecart, rowVal };
             });
             return { rowVal, cells };
         });
-
         return { rows, bestCell, colValues, rowValues };
     };
 
     const matrixSurface = generateSurfaceMatrix();
     const matrixLogement = generateLogementMatrix();
 
-    const handleSaveConfigs = async (
-        prixM2: { config: RangeConfig, values: number[] },
-        prixLogement: { config: RangeConfig, values: number[] },
-        m2Jour: { config: RangeConfig, values: number[] },
-        logementsJour: { config: RangeConfig, values: number[] }
-    ) => {
-        // Update Local State
-        setPrixM2Config(prixM2.config);
-        setPrixM2Values(prixM2.values);
+    const handleSaveConfigs = async (pM2: any, pLog: any, m2J: any, logJ: any) => {
+        setPrixM2Config(pM2.config); setPrixM2Values(pM2.values);
+        setPrixLogementConfig(pLog.config); setPrixLogementValues(pLog.values);
+        setM2JourConfig(m2J.config); setM2JourValues(m2J.values);
+        setLogementsJourConfig(logJ.config); setLogementsJourValues(logJ.values);
 
-        setPrixLogementConfig(prixLogement.config);
-        setPrixLogementValues(prixLogement.values);
-
-        setM2JourConfig(m2Jour.config);
-        setM2JourValues(m2Jour.values);
-
-        setLogementsJourConfig(logementsJour.config);
-        setLogementsJourValues(logementsJour.values);
-
-        // Save to Supabase
         try {
-            const { error } = await supabase
-                .from('settings')
-                .upsert({
-                    key: 'matrix_config',
-                    value: {
-                        prixM2: prixM2.config,
-                        prixLogement: prixLogement.config,
-                        m2Jour: m2Jour.config,
-                        logementsJour: logementsJour.config
-                    },
-                    updated_at: new Date().toISOString()
-                }, { onConflict: 'key' });
-
-            if (error) throw error;
-            toast.success("Configuration matrice sauvegardée !");
-        } catch (err) {
-            console.error("Error saving matrix config:", err);
-            toast.error("Erreur de sauvegarde cloud.");
-        }
+            await supabase.from('settings').upsert({
+                key: 'matrix_config',
+                value: { prixM2: pM2.config, prixLogement: pLog.config, m2Jour: m2J.config, logementsJour: logJ.config },
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'key' });
+            toast.success("Configuration sauvegardée !");
+        } catch (err) { console.error(err); toast.error("Erreur sauvegarde."); }
     };
+
+    // Derived States for skeleton logic
+    const showSurface = safeSurface > 0;
+    const showLogement = safeNbLogements > 0;
+    const showSkeletons = !showSurface && !showLogement; // Show both skeletons if nothing is entered
 
     return (
         <div className="p-4 md:p-6 max-w-[1920px] mx-auto space-y-6">
 
-            {/* TOP BAR: Inputs & Header */}
+            {/* TOP BAR: Inputs */}
             <div className="bg-white/60 dark:bg-brand-card/60 backdrop-blur-md border border-slate-200 dark:border-slate-700/50 rounded-2xl p-4 shadow-sm flex flex-col lg:flex-row items-center justify-between gap-6 sticky top-4 z-40">
                 <div className="flex items-center gap-3 w-full lg:w-auto">
                     <div className="p-2 bg-violet-500/10 rounded-xl hidden sm:block">
@@ -247,123 +197,78 @@ export const Matrix = () => {
                     </div>
                 </div>
 
-                {/* HORIZONTAL INPUTS */}
                 <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 w-full lg:w-auto bg-slate-50 dark:bg-slate-800/50 p-2 rounded-xl border border-slate-100 dark:border-slate-700/50">
-
-                    {/* Surface */}
                     <div className="flex flex-col px-2">
                         <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-0.5">Surface Projet (m²)</label>
-                        <input
-                            type="number"
-                            value={surface}
-                            onChange={(e) => setSurface(e.target.value === '' ? '' : Number(e.target.value))}
-                            className="w-24 bg-transparent font-bold text-slate-900 dark:text-white outline-none border-b border-slate-300 dark:border-slate-600 focus:border-violet-500 text-sm py-1"
-                        />
+                        <input type="number" value={surface} onChange={(e) => setSurface(e.target.value === '' ? '' : Number(e.target.value))} placeholder="0" className="w-24 bg-transparent font-bold text-slate-900 dark:text-white outline-none border-b border-slate-300 dark:border-slate-600 focus:border-violet-500 text-sm py-1 placeholder:text-slate-300 dark:placeholder:text-slate-700" />
                     </div>
-
                     <div className="w-px h-8 bg-slate-200 dark:bg-slate-700" />
-
-                    {/* Logements */}
                     <div className="flex flex-col px-2">
                         <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-0.5">Logements Projet</label>
-                        <input
-                            type="number"
-                            value={nbLogements}
-                            onChange={(e) => setNbLogements(e.target.value === '' ? '' : Number(e.target.value))}
-                            className="w-24 bg-transparent font-bold text-slate-900 dark:text-white outline-none border-b border-slate-300 dark:border-slate-600 focus:border-violet-500 text-sm py-1"
-                        />
+                        <input type="number" value={nbLogements} onChange={(e) => setNbLogements(e.target.value === '' ? '' : Number(e.target.value))} placeholder="0" className="w-24 bg-transparent font-bold text-slate-900 dark:text-white outline-none border-b border-slate-300 dark:border-slate-600 focus:border-violet-500 text-sm py-1 placeholder:text-slate-300 dark:placeholder:text-slate-700" />
                     </div>
-
                     <div className="w-px h-8 bg-slate-200 dark:bg-slate-700" />
-
-                    {/* Phases */}
                     <div className="flex flex-col px-2">
                         <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-0.5">Nb Phases</label>
                         <div className="flex gap-1">
                             {[1, 2, 3, 4].map(p => (
-                                <button
-                                    key={p}
-                                    onClick={() => setPhases(p)}
-                                    className={`w-6 h-6 rounded flex items-center justify-center text-xs font-bold transition-all ${phases === p
-                                        ? 'bg-violet-500 text-white shadow-sm'
-                                        : 'bg-slate-200 dark:bg-slate-700 text-slate-500 hover:bg-slate-300'
-                                        }`}
-                                >
-                                    {p}
-                                </button>
+                                <button key={p} onClick={() => setPhases(p)} className={`w-6 h-6 rounded flex items-center justify-center text-xs font-bold transition-all ${phases === p ? 'bg-violet-500 text-white shadow-sm' : 'bg-slate-200 dark:bg-slate-700 text-slate-500 hover:bg-slate-300'}`}>{p}</button>
                             ))}
                         </div>
                     </div>
-
                     <div className="w-px h-8 bg-slate-200 dark:bg-slate-700" />
-
-                    {/* Prix Jour */}
                     <div className="flex flex-col px-2">
                         <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-0.5">Prix Jour (€)</label>
-                        <input
-                            type="number"
-                            value={prixJour}
-                            onChange={(e) => setPrixJour(e.target.value === '' ? '' : Number(e.target.value))}
-                            className="w-20 bg-transparent font-bold text-slate-900 dark:text-white outline-none border-b border-slate-300 dark:border-slate-600 focus:border-violet-500 text-sm py-1"
-                        />
+                        <input type="number" value={prixJour} onChange={(e) => setPrixJour(e.target.value === '' ? '' : Number(e.target.value))} className="w-20 bg-transparent font-bold text-slate-900 dark:text-white outline-none border-b border-slate-300 dark:border-slate-600 focus:border-violet-500 text-sm py-1" />
                     </div>
                 </div>
 
-                {/* ACTION BUTTON */}
-                <button
-                    onClick={() => setIsSettingsOpen(true)}
-                    className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-violet-500 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all border border-slate-200 dark:border-slate-700"
-                    title="Configurer les échelles de la matrice"
-                >
+                <button onClick={() => setIsSettingsOpen(true)} className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-violet-500 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all border border-slate-200 dark:border-slate-700" title="Configurer les échelles">
                     <Settings className={`w-5 h-5 ${isLoading ? 'animate-spin opacity-50' : ''}`} />
                 </button>
             </div>
 
-            {/* RESULTS SUMMARY BAR (Compact) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {safeSurface > 0 && (
-                    <div className="bg-white/40 dark:bg-brand-card/40 border border-slate-200 dark:border-slate-700/30 rounded-xl p-3 flex items-center justify-between px-6">
-                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Meilleur Écart Surface</span>
-                        <div className="flex items-center gap-3">
-                            <span className="text-xl font-bold text-slate-900 dark:text-white">
-                                {matrixSurface.bestCell.ecart !== Infinity
-                                    ? `${Math.round((matrixSurface.bestCell.prixProd + matrixSurface.bestCell.prixMarche) / 2).toLocaleString('fr-FR')} €`
-                                    : '---'}
-                            </span>
-                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${matrixSurface.bestCell.ecart <= 10 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
-                                {matrixSurface.bestCell.ecart !== Infinity ? `${matrixSurface.bestCell.ecart.toFixed(1)}%` : '-'}
-                            </span>
+            {/* RESULTS SUMMARY BAR (Only if Data) */}
+            {(showSurface || showLogement) && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-4 duration-500">
+                    {showSurface && (
+                        <div className="bg-white/40 dark:bg-brand-card/40 border border-slate-200 dark:border-slate-700/30 rounded-xl p-3 flex items-center justify-between px-6">
+                            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Meilleur Écart Surface</span>
+                            <div className="flex items-center gap-3">
+                                <span className="text-xl font-bold text-slate-900 dark:text-white">
+                                    {matrixSurface.bestCell.ecart !== Infinity ? `${Math.round((matrixSurface.bestCell.prixProd + matrixSurface.bestCell.prixMarche) / 2).toLocaleString('fr-FR')} €` : '---'}
+                                </span>
+                                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${matrixSurface.bestCell.ecart <= 10 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                                    {matrixSurface.bestCell.ecart !== Infinity ? `${matrixSurface.bestCell.ecart.toFixed(1)}%` : '-'}
+                                </span>
+                            </div>
                         </div>
+                    )}
+                    {showLogement && (
+                        <div className="bg-white/40 dark:bg-brand-card/40 border border-slate-200 dark:border-slate-700/30 rounded-xl p-3 flex items-center justify-between px-6">
+                            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Meilleur Écart Logement</span>
+                            <div className="flex items-center gap-3">
+                                <span className="text-xl font-bold text-slate-900 dark:text-white">
+                                    {matrixLogement.bestCell.ecart !== Infinity ? `${Math.round((matrixLogement.bestCell.prixProd + matrixLogement.bestCell.prixMarche) / 2).toLocaleString('fr-FR')} €` : '---'}
+                                </span>
+                                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${matrixLogement.bestCell.ecart <= 10 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                                    {matrixLogement.bestCell.ecart !== Infinity ? `${matrixLogement.bestCell.ecart.toFixed(1)}%` : '-'}
+                                </span>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* MATRICES CONTAINER */}
+            <div className="bento-item bg-white/60 dark:bg-brand-card/60 backdrop-blur-md border border-slate-200 dark:border-slate-700/50 rounded-3xl p-6 shadow-lg min-h-[500px]">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+                    <div className="flex items-center gap-2">
+                        <LayoutDashboard className="w-5 h-5 text-violet-500" />
+                        <h2 className="font-bold text-xl text-slate-900 dark:text-white">Analyse Croisée</h2>
                     </div>
-                )}
-
-                {safeNbLogements > 0 && (
-                    <div className="bg-white/40 dark:bg-brand-card/40 border border-slate-200 dark:border-slate-700/30 rounded-xl p-3 flex items-center justify-between px-6">
-                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Meilleur Écart Logement</span>
-                        <div className="flex items-center gap-3">
-                            <span className="text-xl font-bold text-slate-900 dark:text-white">
-                                {matrixLogement.bestCell.ecart !== Infinity
-                                    ? `${Math.round((matrixLogement.bestCell.prixProd + matrixLogement.bestCell.prixMarche) / 2).toLocaleString('fr-FR')} €`
-                                    : '---'}
-                            </span>
-                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${matrixLogement.bestCell.ecart <= 10 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
-                                {matrixLogement.bestCell.ecart !== Infinity ? `${matrixLogement.bestCell.ecart.toFixed(1)}%` : '-'}
-                            </span>
-                        </div>
-                    </div>
-                )}
-            </div>
-
-            {/* MATRICES DISPLAY SECTION (Full Width) */}
-            {(safeSurface > 0 || safeNbLogements > 0) && (
-                <div className="bento-item bg-white/60 dark:bg-brand-card/60 backdrop-blur-md border border-slate-200 dark:border-slate-700/50 rounded-3xl p-6 shadow-lg">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
-                        <div className="flex items-center gap-2">
-                            <LayoutDashboard className="w-5 h-5 text-violet-500" />
-                            <h2 className="font-bold text-xl text-slate-900 dark:text-white">Analyse Croisée</h2>
-                        </div>
-
-                        {/* Légende */}
+                    {/* Légende only if visible data */}
+                    {(showSurface || showLogement) && (
                         <div className="flex flex-wrap items-center gap-3 text-xs bg-slate-100 dark:bg-slate-800/50 p-2 rounded-lg">
                             <div className="flex items-center gap-2">
                                 <div className="w-3 h-3 rounded bg-emerald-100 dark:bg-emerald-900/50 border border-emerald-300 dark:border-emerald-700"></div>
@@ -378,257 +283,168 @@ export const Matrix = () => {
                                 <span className="text-slate-600 dark:text-slate-400">&gt;20%</span>
                             </div>
                         </div>
-                    </div>
-
-                    <div className="space-y-12">
-                        {/* Matrice A: Surface */}
-                        {safeSurface > 0 && (
-                            <div>
-                                <div className="flex items-center gap-2 mb-3">
-                                    <TrendingUp className="w-4 h-4 text-violet-500" />
-                                    <h3 className="text-sm font-bold text-violet-600 dark:text-violet-400">Matrice Surface (Prix/m² vs Prix Cadence)</h3>
-                                </div>
-                                <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
-                                    <table className="w-full text-sm">
-                                        <thead>
-                                            <tr>
-                                                <th className="bg-slate-50 dark:bg-slate-800 p-3 text-xs font-medium text-slate-500 uppercase tracking-wider border-b border-slate-200 dark:border-slate-700">€ / m²</th>
-                                                {matrixSurface.colValues.map(v => {
-                                                    const days = v > 0 ? Math.ceil(totalSurfaceProject / v) : 0;
-                                                    return (
-                                                        <th key={v} className="bg-slate-50 dark:bg-slate-800 p-2 text-xs font-medium text-slate-500 uppercase tracking-wider border-b border-slate-200 dark:border-slate-700">
-                                                            <div className="flex flex-col items-center gap-0.5">
-                                                                <span>{v} m²/j</span>
-                                                                <span className="text-[10px] normal-case bg-slate-200 dark:bg-slate-700/50 px-1.5 py-0.5 rounded text-slate-600 dark:text-slate-400 font-normal">
-                                                                    {days}j
-                                                                </span>
-                                                            </div>
-                                                        </th>
-                                                    )
-                                                })}
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {matrixSurface.rows.map((row, rowIdx) => (
-                                                <tr key={row.rowVal} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                                                    <td className="p-2 font-bold text-center text-xs text-slate-700 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700/50 bg-slate-50/30 dark:bg-slate-800/30">{row.rowVal.toFixed(2)} €</td>
-                                                    {row.cells.map((cell, colIdx) => {
-                                                        const ecart = cell.ecart;
-                                                        const cellClass = ecart <= 10
-                                                            ? 'bg-emerald-100/80 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300'
-                                                            : ecart <= 20
-                                                                ? 'bg-amber-100/80 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300'
-                                                                : 'text-slate-500 dark:text-slate-500';
-
-                                                        const isBest = matrixSurface.bestCell.ecart !== Infinity && matrixSurface.bestCell.row === rowIdx && matrixSurface.bestCell.col === colIdx;
-                                                        const bestClass = isBest ? "bg-violet-100 dark:bg-violet-900/40 font-bold scale-105 shadow-md z-10" : "";
-
-                                                        return (
-                                                            <td
-                                                                key={colIdx}
-                                                                className={`p-0 text-center border-b border-r border-slate-100 dark:border-slate-800 last:border-r-0 ${cellClass} ${bestClass}`}
-                                                            >
-                                                                <Tooltip
-                                                                    className="min-w-[240px]"
-                                                                    content={
-                                                                        <div className="space-y-3">
-                                                                            <div className="font-bold border-b border-slate-700 pb-1 mb-1 text-xs uppercase tracking-wider text-slate-400">Détails Calcul</div>
-
-                                                                            {/* Section Cadence */}
-                                                                            <div className="space-y-1 bg-emerald-500/10 p-2 rounded border border-emerald-500/20">
-                                                                                <div className="text-[10px] font-bold text-emerald-400 uppercase mb-1">Méthode Cadence</div>
-                                                                                <div className="flex justify-between gap-2 text-[10px] text-slate-400">
-                                                                                    <span>Surface Totale :</span>
-                                                                                    <span className="font-mono text-white">{totalSurfaceProject.toLocaleString()} m²</span>
-                                                                                </div>
-                                                                                <div className="flex justify-between gap-2 text-[10px] text-slate-400">
-                                                                                    <span>Cadence :</span>
-                                                                                    <span className="font-mono text-white">{matrixSurface.colValues[colIdx]} m²/j</span>
-                                                                                </div>
-                                                                                <div className="flex justify-between gap-2 text-[10px] text-slate-400 border-b border-emerald-500/20 pb-1">
-                                                                                    <span>Durée Projet :</span>
-                                                                                    <span className="font-mono text-white">{Number(cell.totalDays).toFixed(1)} jours</span>
-                                                                                </div>
-                                                                                <div className="flex justify-between gap-2 pt-1 font-bold">
-                                                                                    <span className="text-emerald-400">Prix Cadence :</span>
-                                                                                    <span className="font-mono text-white">{cell.prixProd.toLocaleString('fr-FR')} €</span>
-                                                                                </div>
-                                                                            </div>
-
-                                                                            {/* Section Surface */}
-                                                                            <div className="space-y-1 bg-violet-500/10 p-2 rounded border border-violet-500/20">
-                                                                                <div className="text-[10px] font-bold text-violet-400 uppercase mb-1">Méthode Surface</div>
-                                                                                <div className="flex justify-between gap-2 text-[10px] text-slate-400">
-                                                                                    <span>Surface Projet :</span>
-                                                                                    <span className="font-mono text-white">{safeSurface.toLocaleString()} m²</span>
-                                                                                </div>
-                                                                                <div className="flex justify-between gap-2 text-[10px] text-slate-400 border-b border-violet-500/20 pb-1">
-                                                                                    <span>Prix Unitaire :</span>
-                                                                                    <span className="font-mono text-white">{row.rowVal} €/m²</span>
-                                                                                </div>
-                                                                                <div className="flex justify-between gap-2 pt-1 font-bold">
-                                                                                    <span className="text-violet-400">Prix Surface :</span>
-                                                                                    <span className="font-mono text-white">{cell.prixMarche.toLocaleString('fr-FR')} €</span>
-                                                                                </div>
-                                                                            </div>
-
-                                                                            <div className="pt-2 border-t border-slate-700 flex justify-between gap-4">
-                                                                                <span className="text-slate-300">Écart :</span>
-                                                                                <span className={`font-bold ${ecart <= 10 ? 'text-emerald-400' : ecart <= 20 ? 'text-amber-400' : 'text-red-400'}`}>
-                                                                                    {ecart.toFixed(1)}%
-                                                                                </span>
-                                                                            </div>
-                                                                        </div>
-                                                                    }
-                                                                >
-                                                                    <div className="p-2 h-full flex flex-col items-center justify-center gap-0.5 min-h-[50px]">
-                                                                        <div className="font-bold text-xs text-emerald-700 dark:text-emerald-400" title="Prix calculé par la Cadence">
-                                                                            {cell.prixProd.toLocaleString('fr-FR')}
-                                                                        </div>
-                                                                        <div className="text-[10px] font-medium text-violet-700 dark:text-violet-400 opacity-80" title="Prix calculé par la Surface">
-                                                                            {cell.prixMarche.toLocaleString('fr-FR')}
-                                                                        </div>
-                                                                        <div className="text-[10px] font-bold opacity-60 scale-90 mt-0.5">
-                                                                            {ecart.toFixed(1)}%
-                                                                        </div>
-                                                                    </div>
-                                                                </Tooltip>
-                                                            </td>
-                                                        );
-                                                    })}
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Matrice B: Logement */}
-                        {safeNbLogements > 0 && (
-                            <div>
-                                <div className="flex items-center gap-2 mb-3">
-                                    <TrendingUp className="w-4 h-4 text-violet-500" />
-                                    <h3 className="text-sm font-bold text-violet-600 dark:text-violet-400">Matrice Logement (Prix/Unité vs Prix Cadence)</h3>
-                                </div>
-                                <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
-                                    <table className="w-full text-sm">
-                                        <thead>
-                                            <tr>
-                                                <th className="bg-slate-50 dark:bg-slate-800 p-3 text-xs font-medium text-slate-500 uppercase tracking-wider border-b border-slate-200 dark:border-slate-700">€ / Unité</th>
-                                                {matrixLogement.colValues.map(v => {
-                                                    const days = v > 0 ? Math.ceil(totalUnitsProject / v) : 0;
-                                                    return (
-                                                        <th key={v} className="bg-slate-50 dark:bg-slate-800 p-3 text-xs font-medium text-slate-500 uppercase tracking-wider border-b border-slate-200 dark:border-slate-700">
-                                                            <div className="flex flex-col items-center gap-0.5">
-                                                                <span>{v} u/j</span>
-                                                                <span className="text-[10px] normal-case bg-slate-200 dark:bg-slate-700/50 px-1.5 py-0.5 rounded text-slate-600 dark:text-slate-400 font-normal">
-                                                                    {days}j
-                                                                </span>
-                                                            </div>
-                                                        </th>
-                                                    )
-                                                })}
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {matrixLogement.rows.map((row, rowIdx) => (
-                                                <tr key={row.rowVal} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                                                    <td className="p-2 font-bold text-center text-xs text-slate-700 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700/50 bg-slate-50/30 dark:bg-slate-800/30">{row.rowVal.toFixed(0)} €</td>
-                                                    {row.cells.map((cell, colIdx) => {
-                                                        const ecart = cell.ecart;
-                                                        const cellClass = ecart <= 10
-                                                            ? 'bg-emerald-100/80 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300'
-                                                            : ecart <= 20
-                                                                ? 'bg-amber-100/80 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300'
-                                                                : 'text-slate-500 dark:text-slate-500';
-
-                                                        const isBest = matrixLogement.bestCell.ecart !== Infinity && matrixLogement.bestCell.row === rowIdx && matrixLogement.bestCell.col === colIdx;
-                                                        const bestClass = isBest ? "bg-violet-100 dark:bg-violet-900/40 font-bold scale-105 shadow-md z-10" : "";
-
-                                                        return (
-                                                            <td
-                                                                key={colIdx}
-                                                                className={`p-0 text-center border-b border-r border-slate-100 dark:border-slate-800 last:border-r-0 ${cellClass} ${bestClass}`}
-                                                            >
-                                                                <Tooltip
-                                                                    className="min-w-[240px]"
-                                                                    content={
-                                                                        <div className="space-y-3">
-                                                                            <div className="font-bold border-b border-slate-700 pb-1 mb-1 text-xs uppercase tracking-wider text-slate-400">Détails Calcul</div>
-
-                                                                            {/* Section Cadence */}
-                                                                            <div className="space-y-1 bg-emerald-500/10 p-2 rounded border border-emerald-500/20">
-                                                                                <div className="text-[10px] font-bold text-emerald-400 uppercase mb-1">Méthode Cadence</div>
-                                                                                <div className="flex justify-between gap-2 text-[10px] text-slate-400">
-                                                                                    <span>Volume Total :</span>
-                                                                                    <span className="font-mono text-white">{totalUnitsProject.toLocaleString()} u</span>
-                                                                                </div>
-                                                                                <div className="flex justify-between gap-2 text-[10px] text-slate-400">
-                                                                                    <span>Cadence :</span>
-                                                                                    <span className="font-mono text-white">{matrixLogement.colValues[colIdx]} u/j</span>
-                                                                                </div>
-                                                                                <div className="flex justify-between gap-2 text-[10px] text-slate-400 border-b border-emerald-500/20 pb-1">
-                                                                                    <span>Durée Projet :</span>
-                                                                                    <span className="font-mono text-white">{Number(cell.totalDays).toFixed(1)} jours</span>
-                                                                                </div>
-                                                                                <div className="flex justify-between gap-2 pt-1 font-bold">
-                                                                                    <span className="text-emerald-400">Prix Cadence :</span>
-                                                                                    <span className="font-mono text-white">{cell.prixProd.toLocaleString('fr-FR')} €</span>
-                                                                                </div>
-                                                                            </div>
-
-                                                                            {/* Section Unitaire */}
-                                                                            <div className="space-y-1 bg-violet-500/10 p-2 rounded border border-violet-500/20">
-                                                                                <div className="text-[10px] font-bold text-violet-400 uppercase mb-1">Méthode Unitaire</div>
-                                                                                <div className="flex justify-between gap-2 text-[10px] text-slate-400">
-                                                                                    <span>Logements :</span>
-                                                                                    <span className="font-mono text-white">{safeNbLogements.toLocaleString()} u</span>
-                                                                                </div>
-                                                                                <div className="flex justify-between gap-2 text-[10px] text-slate-400 border-b border-violet-500/20 pb-1">
-                                                                                    <span>Prix Unitaire :</span>
-                                                                                    <span className="font-mono text-white">{row.rowVal} €/u</span>
-                                                                                </div>
-                                                                                <div className="flex justify-between gap-2 pt-1 font-bold">
-                                                                                    <span className="text-violet-400">Prix Unitaire :</span>
-                                                                                    <span className="font-mono text-white">{cell.prixMarche.toLocaleString('fr-FR')} €</span>
-                                                                                </div>
-                                                                            </div>
-
-                                                                            <div className="pt-2 border-t border-slate-700 flex justify-between gap-4">
-                                                                                <span className="text-slate-300">Écart :</span>
-                                                                                <span className={`font-bold ${ecart <= 10 ? 'text-emerald-400' : ecart <= 20 ? 'text-amber-400' : 'text-red-400'}`}>
-                                                                                    {ecart.toFixed(1)}%
-                                                                                </span>
-                                                                            </div>
-                                                                        </div>
-                                                                    }
-                                                                >
-                                                                    <div className="p-2 h-full flex flex-col items-center justify-center gap-0.5 min-h-[50px]">
-                                                                        <div className="font-bold text-xs text-emerald-700 dark:text-emerald-400" title="Prix calculé par la Cadence">
-                                                                            {cell.prixProd.toLocaleString('fr-FR')}
-                                                                        </div>
-                                                                        <div className="text-[10px] font-medium text-violet-700 dark:text-violet-400 opacity-80" title="Prix calculé par la Surface">
-                                                                            {cell.prixMarche.toLocaleString('fr-FR')}
-                                                                        </div>
-                                                                        <div className="text-[10px] font-bold opacity-60 scale-90 mt-0.5">
-                                                                            {ecart.toFixed(1)}%
-                                                                        </div>
-                                                                    </div>
-                                                                </Tooltip>
-                                                            </td>
-                                                        );
-                                                    })}
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        )}
-                    </div>
+                    )}
                 </div>
-            )}
+
+                <div className="space-y-12">
+                    {/* --- SKELETON DISPLAY (If Empty) --- */}
+                    {showSkeletons && (
+                        <div className="space-y-12 animate-in fade-in duration-700">
+                            <div className="p-4 bg-violet-50/50 dark:bg-violet-900/10 border border-violet-100 dark:border-violet-900/30 rounded-xl mb-6 text-center">
+                                <p className="text-sm text-violet-600 dark:text-violet-400 font-medium">✨ Renseignez une Surface ou un nombre de Logements ci-dessus pour générer les matrices.</p>
+                            </div>
+                            <MatrixSkeleton title="Matrice Surface" icon={TrendingUp} />
+                            <MatrixSkeleton title="Matrice Logement" icon={Building} />
+                        </div>
+                    )}
+
+                    {/* Matrice A: Surface */}
+                    {showSurface && (
+                        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                            <div className="flex items-center gap-2 mb-3">
+                                <TrendingUp className="w-4 h-4 text-violet-500" />
+                                <h3 className="text-sm font-bold text-violet-600 dark:text-violet-400">Matrice Surface (Prix/m² vs Prix Cadence)</h3>
+                            </div>
+                            <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+                                <table className="w-full text-sm">
+                                    <thead>
+                                        <tr>
+                                            <th className="bg-slate-50 dark:bg-slate-800 p-3 text-xs font-medium text-slate-500 uppercase tracking-wider border-b border-slate-200 dark:border-slate-700">€ / m²</th>
+                                            {matrixSurface.colValues.map(v => {
+                                                const days = v > 0 ? Math.ceil(totalSurfaceProject / v) : 0;
+                                                return (
+                                                    <th key={v} className="bg-slate-50 dark:bg-slate-800 p-2 text-xs font-medium text-slate-500 uppercase tracking-wider border-b border-slate-200 dark:border-slate-700">
+                                                        <div className="flex flex-col items-center gap-0.5">
+                                                            <span>{v} m²/j</span>
+                                                            <span className="text-[10px] normal-case bg-slate-200 dark:bg-slate-700/50 px-1.5 py-0.5 rounded text-slate-600 dark:text-slate-400 font-normal">{days}j</span>
+                                                        </div>
+                                                    </th>
+                                                )
+                                            })}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {matrixSurface.rows.map((row, rowIdx) => (
+                                            <tr key={row.rowVal} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                                                <td className="p-2 font-bold text-center text-xs text-slate-700 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700/50 bg-slate-50/30 dark:bg-slate-800/30">{row.rowVal.toFixed(2)} €</td>
+                                                {row.cells.map((cell, colIdx) => {
+                                                    const ecart = cell.ecart;
+                                                    const cellClass = ecart <= 10 ? 'bg-emerald-100/80 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300' : ecart <= 20 ? 'bg-amber-100/80 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300' : 'text-slate-500 dark:text-slate-500';
+                                                    const isBest = matrixSurface.bestCell.ecart !== Infinity && matrixSurface.bestCell.row === rowIdx && matrixSurface.bestCell.col === colIdx;
+                                                    const bestClass = isBest ? "bg-violet-100 dark:bg-violet-900/40 font-bold scale-105 shadow-md z-10" : "";
+
+                                                    return (
+                                                        <td key={colIdx} className={`p-0 text-center border-b border-r border-slate-100 dark:border-slate-800 last:border-r-0 ${cellClass} ${bestClass}`}>
+                                                            <Tooltip className="min-w-[240px]" content={
+                                                                <div className="space-y-3">
+                                                                    <div className="font-bold border-b border-slate-700 pb-1 mb-1 text-xs uppercase tracking-wider text-slate-400">Détails Calcul</div>
+                                                                    <div className="space-y-1 bg-emerald-500/10 p-2 rounded border border-emerald-500/20">
+                                                                        <div className="text-[10px] font-bold text-emerald-400 uppercase mb-1">Méthode Cadence</div>
+                                                                        <div className="flex justify-between gap-2 text-[10px] text-slate-400"><span>Surface Totale :</span><span className="font-mono text-white">{totalSurfaceProject.toLocaleString()} m²</span></div>
+                                                                        <div className="flex justify-between gap-2 text-[10px] text-slate-400"><span>Cadence :</span><span className="font-mono text-white">{matrixSurface.colValues[colIdx]} m²/j</span></div>
+                                                                        <div className="flex justify-between gap-2 text-[10px] text-slate-400 border-b border-emerald-500/20 pb-1"><span>Durée Projet :</span><span className="font-mono text-white">{Number(cell.totalDays).toFixed(1)} jours</span></div>
+                                                                        <div className="flex justify-between gap-2 pt-1 font-bold"><span className="text-emerald-400">Prix Cadence :</span><span className="font-mono text-white">{cell.prixProd.toLocaleString('fr-FR')} €</span></div>
+                                                                    </div>
+                                                                    <div className="space-y-1 bg-violet-500/10 p-2 rounded border border-violet-500/20">
+                                                                        <div className="text-[10px] font-bold text-violet-400 uppercase mb-1">Méthode Surface</div>
+                                                                        <div className="flex justify-between gap-2 text-[10px] text-slate-400"><span>Surface Projet :</span><span className="font-mono text-white">{safeSurface.toLocaleString()} m²</span></div>
+                                                                        <div className="flex justify-between gap-2 text-[10px] text-slate-400 border-b border-violet-500/20 pb-1"><span>Prix Unitaire :</span><span className="font-mono text-white">{row.rowVal} €/m²</span></div>
+                                                                        <div className="flex justify-between gap-2 pt-1 font-bold"><span className="text-violet-400">Prix Surface :</span><span className="font-mono text-white">{cell.prixMarche.toLocaleString('fr-FR')} €</span></div>
+                                                                    </div>
+                                                                    <div className="pt-2 border-t border-slate-700 flex justify-between gap-4"><span className="text-slate-300">Écart :</span><span className={`font-bold ${ecart <= 10 ? 'text-emerald-400' : ecart <= 20 ? 'text-amber-400' : 'text-red-400'}`}>{ecart.toFixed(1)}%</span></div>
+                                                                </div>
+                                                            }>
+                                                                <div className="p-2 h-full flex flex-col items-center justify-center gap-0.5 min-h-[50px]">
+                                                                    <div className="font-bold text-xs text-emerald-700 dark:text-emerald-400">{cell.prixProd.toLocaleString('fr-FR')}</div>
+                                                                    <div className="text-[10px] font-medium text-violet-700 dark:text-violet-400 opacity-80">{cell.prixMarche.toLocaleString('fr-FR')}</div>
+                                                                    <div className="text-[10px] font-bold opacity-60 scale-90 mt-0.5">{ecart.toFixed(1)}%</div>
+                                                                </div>
+                                                            </Tooltip>
+                                                        </td>
+                                                    );
+                                                })}
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Matrice B: Logement */}
+                    {showLogement && (
+                        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100">
+                            <div className="flex items-center gap-2 mb-3">
+                                <TrendingUp className="w-4 h-4 text-violet-500" />
+                                <h3 className="text-sm font-bold text-violet-600 dark:text-violet-400">Matrice Logement (Prix/Unité vs Prix Cadence)</h3>
+                            </div>
+                            <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+                                <table className="w-full text-sm">
+                                    <thead>
+                                        <tr>
+                                            <th className="bg-slate-50 dark:bg-slate-800 p-3 text-xs font-medium text-slate-500 uppercase tracking-wider border-b border-slate-200 dark:border-slate-700">€ / Unité</th>
+                                            {matrixLogement.colValues.map(v => {
+                                                const days = v > 0 ? Math.ceil(totalUnitsProject / v) : 0;
+                                                return (
+                                                    <th key={v} className="bg-slate-50 dark:bg-slate-800 p-3 text-xs font-medium text-slate-500 uppercase tracking-wider border-b border-slate-200 dark:border-slate-700">
+                                                        <div className="flex flex-col items-center gap-0.5">
+                                                            <span>{v} u/j</span>
+                                                            <span className="text-[10px] normal-case bg-slate-200 dark:bg-slate-700/50 px-1.5 py-0.5 rounded text-slate-600 dark:text-slate-400 font-normal">{days}j</span>
+                                                        </div>
+                                                    </th>
+                                                )
+                                            })}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {matrixLogement.rows.map((row, rowIdx) => (
+                                            <tr key={row.rowVal} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                                                <td className="p-2 font-bold text-center text-xs text-slate-700 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700/50 bg-slate-50/30 dark:bg-slate-800/30">{row.rowVal.toFixed(0)} €</td>
+                                                {row.cells.map((cell, colIdx) => {
+                                                    const ecart = cell.ecart;
+                                                    const cellClass = ecart <= 10 ? 'bg-emerald-100/80 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300' : ecart <= 20 ? 'bg-amber-100/80 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300' : 'text-slate-500 dark:text-slate-500';
+                                                    const isBest = matrixLogement.bestCell.ecart !== Infinity && matrixLogement.bestCell.row === rowIdx && matrixLogement.bestCell.col === colIdx;
+                                                    const bestClass = isBest ? "bg-violet-100 dark:bg-violet-900/40 font-bold scale-105 shadow-md z-10" : "";
+
+                                                    return (
+                                                        <td key={colIdx} className={`p-0 text-center border-b border-r border-slate-100 dark:border-slate-800 last:border-r-0 ${cellClass} ${bestClass}`}>
+                                                            <Tooltip className="min-w-[240px]" content={
+                                                                <div className="space-y-3">
+                                                                    <div className="font-bold border-b border-slate-700 pb-1 mb-1 text-xs uppercase tracking-wider text-slate-400">Détails Calcul</div>
+                                                                    <div className="space-y-1 bg-emerald-500/10 p-2 rounded border border-emerald-500/20">
+                                                                        <div className="text-[10px] font-bold text-emerald-400 uppercase mb-1">Méthode Cadence</div>
+                                                                        <div className="flex justify-between gap-2 text-[10px] text-slate-400"><span>Volume Total :</span><span className="font-mono text-white">{totalUnitsProject.toLocaleString()} u</span></div>
+                                                                        <div className="flex justify-between gap-2 text-[10px] text-slate-400"><span>Cadence :</span><span className="font-mono text-white">{matrixLogement.colValues[colIdx]} u/j</span></div>
+                                                                        <div className="flex justify-between gap-2 text-[10px] text-slate-400 border-b border-emerald-500/20 pb-1"><span>Durée Projet :</span><span className="font-mono text-white">{Number(cell.totalDays).toFixed(1)} jours</span></div>
+                                                                        <div className="flex justify-between gap-2 pt-1 font-bold"><span className="text-emerald-400">Prix Cadence :</span><span className="font-mono text-white">{cell.prixProd.toLocaleString('fr-FR')} €</span></div>
+                                                                    </div>
+                                                                    <div className="space-y-1 bg-violet-500/10 p-2 rounded border border-violet-500/20">
+                                                                        <div className="text-[10px] font-bold text-violet-400 uppercase mb-1">Méthode Unitaire</div>
+                                                                        <div className="flex justify-between gap-2 text-[10px] text-slate-400"><span>Logements :</span><span className="font-mono text-white">{safeNbLogements.toLocaleString()} u</span></div>
+                                                                        <div className="flex justify-between gap-2 text-[10px] text-slate-400 border-b border-violet-500/20 pb-1"><span>Prix Unitaire :</span><span className="font-mono text-white">{row.rowVal} €/u</span></div>
+                                                                        <div className="flex justify-between gap-2 pt-1 font-bold"><span className="text-violet-400">Prix Unitaire :</span><span className="font-mono text-white">{cell.prixMarche.toLocaleString('fr-FR')} €</span></div>
+                                                                    </div>
+                                                                    <div className="pt-2 border-t border-slate-700 flex justify-between gap-4"><span className="text-slate-300">Écart :</span><span className={`font-bold ${ecart <= 10 ? 'text-emerald-400' : ecart <= 20 ? 'text-amber-400' : 'text-red-400'}`}>{ecart.toFixed(1)}%</span></div>
+                                                                </div>
+                                                            }>
+                                                                <div className="p-2 h-full flex flex-col items-center justify-center gap-0.5 min-h-[50px]">
+                                                                    <div className="font-bold text-xs text-emerald-700 dark:text-emerald-400">{cell.prixProd.toLocaleString('fr-FR')}</div>
+                                                                    <div className="text-[10px] font-medium text-violet-700 dark:text-violet-400 opacity-80">{cell.prixMarche.toLocaleString('fr-FR')}</div>
+                                                                    <div className="text-[10px] font-bold opacity-60 scale-90 mt-0.5">{ecart.toFixed(1)}%</div>
+                                                                </div>
+                                                            </Tooltip>
+                                                        </td>
+                                                    );
+                                                })}
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
 
             <MatrixSettingsModal
                 isOpen={isSettingsOpen}
