@@ -439,6 +439,13 @@ export const Matrix = () => {
                                                                             <div className="flex justify-between gap-2 text-[10px] text-slate-400"><span>Prix Standard :</span><span className="font-mono text-white">{cell.prixProd.toLocaleString('fr-FR')} €</span></div>
                                                                         </div>
 
+                                                                        <div className="space-y-1 bg-amber-500/10 p-2 rounded border border-amber-500/20">
+                                                                            <div className="text-[10px] font-bold text-amber-400 uppercase mb-1">Marge</div>
+                                                                            <div className="flex justify-between gap-2 text-[10px] text-slate-400"><span>Calcul :</span><span className="font-mono text-white">{cell.prixMarche.toLocaleString('fr-FR')} - {(cell.totalDays * floorRate).toLocaleString('fr-FR')}</span></div>
+                                                                            <div className="flex justify-between gap-2 text-[10px] text-slate-400 border-b border-amber-500/20 pb-1"><span>Résultat :</span><span className="font-mono text-white">{Math.round(margin).toLocaleString()} €</span></div>
+                                                                            <div className="flex justify-between gap-2 pt-1 font-bold"><span className="text-amber-400">Pourcentage :</span><span className="font-mono text-white">{cell.prixMarche > 0 ? Math.round((margin / cell.prixMarche) * 100) : 0} %</span></div>
+                                                                        </div>
+
                                                                         <div className="pt-1 text-[10px] text-slate-500 italic">
                                                                             * Marge calculée par rapport au prix plancher de {floorRate}€/j.
                                                                         </div>
@@ -555,6 +562,13 @@ export const Matrix = () => {
                                                                             <div className="text-[10px] font-bold text-emerald-400 uppercase mb-1">Cibles</div>
                                                                             <div className="flex justify-between gap-2 text-[10px] text-slate-400"><span>Prix Plancher :</span><span className="font-mono text-white">{(cell.totalDays * floorRate).toLocaleString('fr-FR')} €</span></div>
                                                                             <div className="flex justify-between gap-2 text-[10px] text-slate-400"><span>Prix Standard :</span><span className="font-mono text-white">{cell.prixProd.toLocaleString('fr-FR')} €</span></div>
+                                                                        </div>
+
+                                                                        <div className="space-y-1 bg-amber-500/10 p-2 rounded border border-amber-500/20">
+                                                                            <div className="text-[10px] font-bold text-amber-400 uppercase mb-1">Marge</div>
+                                                                            <div className="flex justify-between gap-2 text-[10px] text-slate-400"><span>Calcul :</span><span className="font-mono text-white">{cell.prixMarche.toLocaleString('fr-FR')} - {(cell.totalDays * floorRate).toLocaleString('fr-FR')}</span></div>
+                                                                            <div className="flex justify-between gap-2 text-[10px] text-slate-400 border-b border-amber-500/20 pb-1"><span>Résultat :</span><span className="font-mono text-white">{Math.round(margin).toLocaleString()} €</span></div>
+                                                                            <div className="flex justify-between gap-2 pt-1 font-bold"><span className="text-amber-400">Pourcentage :</span><span className="font-mono text-white">{cell.prixMarche > 0 ? Math.round((margin / cell.prixMarche) * 100) : 0} %</span></div>
                                                                         </div>
 
                                                                         <div className="pt-1 text-[10px] text-slate-500 italic">
