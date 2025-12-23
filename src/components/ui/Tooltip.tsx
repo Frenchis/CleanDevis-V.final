@@ -5,9 +5,10 @@ interface TooltipProps {
     children: ReactNode;
     content: ReactNode;
     className?: string;
+    disabled?: boolean;
 }
 
-export const Tooltip: React.FC<TooltipProps> = ({ children, content, className = '' }) => {
+export const Tooltip: React.FC<TooltipProps> = ({ children, content, className = '', disabled = false }) => {
     const [isVisible, setIsVisible] = useState(false);
     const [coords, setCoords] = useState({ top: 0, left: 0 });
     const triggerRef = useRef<HTMLDivElement>(null);
@@ -24,6 +25,7 @@ export const Tooltip: React.FC<TooltipProps> = ({ children, content, className =
     };
 
     const handleMouseEnter = () => {
+        if (disabled) return;
         updatePosition();
         setIsVisible(true);
     };
@@ -31,6 +33,13 @@ export const Tooltip: React.FC<TooltipProps> = ({ children, content, className =
     const handleMouseLeave = () => {
         setIsVisible(false);
     };
+
+    // Close tooltip if disabled prop changes to true
+    useEffect(() => {
+        if (disabled) {
+            setIsVisible(false);
+        }
+    }, [disabled]);
 
     useEffect(() => {
         if (isVisible) {

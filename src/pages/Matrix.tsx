@@ -68,6 +68,16 @@ export const Matrix = () => {
     const [thresholds, setThresholds] = useState({ green: 5, orange: 10 });
     const [floorRate, setFloorRate] = useState(735);
     const [showProfitability, setShowProfitability] = useState(false);
+    const [areTooltipsEnabled, setAreTooltipsEnabled] = useState(true);
+
+    const toggleTooltips = () => {
+        setAreTooltipsEnabled(prev => !prev);
+        toast({
+            title: !areTooltipsEnabled ? "Bulles d'aide activées" : "Bulles d'aide désactivées",
+            description: !areTooltipsEnabled ? "Les détails s'affichent au survol." : "Cliquez sur la matrice pour les réactiver.",
+            duration: 2000,
+        });
+    };
 
     // Load from Supabase on mount
     useEffect(() => {
@@ -505,8 +515,14 @@ export const Matrix = () => {
                             <div className="flex items-center gap-2 mb-3">
                                 <TrendingUp className="w-4 h-4 text-violet-500" />
                                 <h3 className="text-sm font-bold text-violet-600 dark:text-violet-400">Matrice Logement (Prix/Unité vs Prix Cadence)</h3>
+                                <div className="text-[10px] text-slate-400 ml-auto italic">
+                                    {areTooltipsEnabled ? "Cliquez pour désactiver les détails" : "Cliquez pour activer les détails"}
+                                </div>
                             </div>
-                            <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+                            <div
+                                className={`overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 ${areTooltipsEnabled ? 'cursor-pointer' : 'cursor-crosshair'}`}
+                                onClick={toggleTooltips}
+                            >
                                 <table className="w-full text-sm">
                                     <thead>
                                         <tr>
