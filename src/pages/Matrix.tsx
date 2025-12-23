@@ -479,7 +479,6 @@ export const Matrix = () => {
                                                                             <div className="text-[10px] font-bold opacity-60 scale-90 mt-0.5">{ecart.toFixed(1)}%</div>
                                                                         </>
                                                                     )}
-                                                                    {isLowProfit && <div className="absolute top-1 right-1 text-red-500">⚠️</div>}
                                                                 </div>
                                                             </Tooltip>
                                                         </td>

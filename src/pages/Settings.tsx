@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Save, RefreshCw, AlertCircle, Settings as SettingsIcon, Users, LayoutTemplate, Coins, CloudLightning, Link as LinkIcon } from 'lucide-react';
+import { Save, RefreshCw, AlertCircle, Settings as SettingsIcon, Users, LayoutTemplate, Coins, CloudLightning, Link as LinkIcon, ChevronDown, ChevronUp } from 'lucide-react';
 import { GlobalConfig, TypologyPerformance, Phase } from '../types';
 import { DEFAULT_CONFIG, getConfig } from '../services/calculationService';
 import { checkConnection } from '../services/sellsyService';
@@ -15,6 +15,7 @@ export const Settings = () => {
     const [config, setConfig] = useState<GlobalConfig>(DEFAULT_CONFIG);
     const [isSaved, setIsSaved] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [showAdvanced, setShowAdvanced] = useState(false);
 
     const [apiStatus, setApiStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
     const [apiMessage, setApiMessage] = useState('');
@@ -236,144 +237,7 @@ export const Settings = () => {
 
             <div className="space-y-8">
 
-                {/* TOP ROW: TECHNIQUE & PRODUCTIVITÉ */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    {/* PRODUCTIVITÉ TYPO (M1) */}
-                    <div className="bg-white/60 dark:bg-brand-card/60 backdrop-blur-md border border-slate-200 dark:border-slate-700/50 rounded-2xl p-6">
-                        <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-3">
-                            <div className="p-2 bg-purple-600 rounded-lg text-white">
-                                <LayoutTemplate className="w-5 h-5" />
-                            </div>
-                            Approche Technique : Cadences (Log/Jour)
-                        </h3>
-                        <div className="grid grid-cols-2 gap-4">
-                            {(Object.keys(config.productivity.typologies) as Array<keyof TypologyPerformance>).map((type) => (
-                                <div key={type} className="relative">
-                                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-300 mb-1">{type}</label>
-                                    <div className="relative">
-                                        <input
-                                            type="number"
-                                            value={config.productivity.typologies[type]}
-                                            onChange={(e) => handleTypologyYieldChange(type, parseFloat(e.target.value))}
-                                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 pl-3 pr-16 text-slate-900 dark:text-white focus:ring-1 focus:ring-purple-500 outline-none"
-                                        />
-                                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 dark:text-slate-500">u/jour</span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* COUTS & SURFACE */}
-                    <div className="bg-brand-card/60 backdrop-blur-md border border-slate-700/50 rounded-2xl p-6">
-                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
-                            <div className="p-2 bg-brand-blue rounded-lg text-white">
-                                <Users className="w-5 h-5" />
-                            </div>
-                            Coût & Productivité Surface
-                        </h3>
-
-                        <div className="space-y-6">
-                            <div>
-                                <label className="block text-sm font-medium text-slate-500 dark:text-slate-300 mb-2">Coût Équipe / Jour (€ HT)</label>
-                                <div className="relative">
-                                    <input
-                                        type="number"
-                                        value={config.dailyRate}
-                                        onChange={(e) => handleChange('dailyRate', parseFloat(e.target.value))}
-                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-green outline-none font-mono text-xl font-bold"
-                                    />
-                                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500">€</span>
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-slate-500 dark:text-slate-300 mb-2">Prix Plancher / Jour (€ HT)</label>
-                                <div className="relative">
-                                    <input
-                                        type="number"
-                                        value={config.floorRate || 735}
-                                        onChange={(e) => handleChange('floorRate', parseFloat(e.target.value))}
-                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500 outline-none font-mono text-xl font-bold"
-                                    />
-                                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500">€</span>
-                                </div>
-                                <p className="text-[10px] text-slate-500 mt-1 italic">Prix minimum vital en dessous duquel vous ne vendez pas.</p>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-200 dark:border-slate-700">
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase">Scénario Pessimiste</label>
-                                    <label className="block text-sm text-slate-500 dark:text-slate-300 mb-1">Rendement Min (m²/j)</label>
-                                    <input
-                                        type="number"
-                                        value={config.productivity.surfaceMin}
-                                        onChange={(e) => handleChange('surfaceMin', parseFloat(e.target.value), 'productivity')}
-                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-slate-900 dark:text-white font-mono"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase">Scénario Optimiste</label>
-                                    <label className="block text-sm text-slate-500 dark:text-slate-300 mb-1">Rendement Max (m²/j)</label>
-                                    <input
-                                        type="number"
-                                        value={config.productivity.surfaceMax}
-                                        onChange={(e) => handleChange('surfaceMax', parseFloat(e.target.value), 'productivity')}
-                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-slate-900 dark:text-white font-mono"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* MIDDLE ROW: PRIX MARCHÉ (M2) */}
-                <div className="bg-white/60 dark:bg-brand-card/60 backdrop-blur-md border border-slate-200 dark:border-slate-700/50 rounded-2xl p-6">
-                    <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-3">
-                        <div className="p-2 bg-emerald-600 rounded-lg text-white">
-                            <Coins className="w-5 h-5" />
-                        </div>
-                        Approche Marché (Comparatif)
-                    </h3>
-
-                    <div className="space-y-4">
-                        <p className="text-sm text-slate-500 dark:text-slate-400">
-                            Définissez le prix moyen au m² utilisé pour la comparaison commerciale.
-                        </p>
-                        <div>
-                            <label className="block text-sm font-medium text-slate-500 dark:text-slate-300 mb-2">Prix Marché (€/m²)</label>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                {[1, 2, 3, 4].map(phase => (
-                                    <div key={phase}>
-                                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 text-center">{phase} Phase{phase > 1 ? 's' : ''}</label>
-                                        <div className="relative">
-                                            <input
-                                                type="number"
-                                                step="0.1"
-                                                value={config.marketRate?.[phase] || 0}
-                                                onChange={(e) => {
-                                                    const newVal = parseFloat(e.target.value);
-                                                    setConfig(prev => ({
-                                                        ...prev,
-                                                        marketRate: {
-                                                            ...prev.marketRate,
-                                                            [phase]: newVal
-                                                        }
-                                                    }));
-                                                    setIsSaved(false);
-                                                }}
-                                                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-2 py-2 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none font-mono text-center font-bold"
-                                            />
-                                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate-400 dark:text-slate-500">€</span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* MATRIX COLOR THRESHOLDS */}
+                {/* MATRIX COLOR THRESHOLDS (MOVED UP) */}
                 <div className="bg-white/60 dark:bg-brand-card/60 backdrop-blur-md border border-slate-200 dark:border-slate-700/50 rounded-2xl p-6">
                     <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-3">
                         <div className="p-2 bg-violet-600 rounded-lg text-white">
@@ -415,7 +279,7 @@ export const Settings = () => {
                     </div>
                 </div>
 
-                {/* BOTTOM ROW: INTEGRATION SELLSY */}
+                {/* INTEGRATION SELLSY (MOVED UP) */}
                 <div className="bg-white/60 dark:bg-brand-card/60 backdrop-blur-md border border-slate-200 dark:border-slate-700/50 rounded-2xl p-6">
                     <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-3">
                         <div className="p-2 bg-blue-600 rounded-lg text-white">
@@ -495,6 +359,168 @@ export const Settings = () => {
                             </div>
                         </div>
                     </div>
+                </div>
+
+                {/* COLLAPSIBLE ADVANCED SETTINGS */}
+                <div className="border-t border-slate-200 dark:border-slate-700 pt-8">
+                    <button
+                        onClick={() => setShowAdvanced(!showAdvanced)}
+                        className="w-full flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors group"
+                    >
+                        <div className="flex items-center gap-3">
+                            <SettingsIcon className="w-5 h-5 text-slate-500 group-hover:text-violet-500 transition-colors" />
+                            <div className="text-left">
+                                <h3 className="font-bold text-slate-700 dark:text-slate-200 group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">Paramètres de Calcul Avancés</h3>
+                                <p className="text-sm text-slate-500 dark:text-slate-400">Cadences, Coûts unitaires et Prix marché</p>
+                            </div>
+                        </div>
+                        {showAdvanced ? (
+                            <ChevronUp className="w-5 h-5 text-slate-400" />
+                        ) : (
+                            <ChevronDown className="w-5 h-5 text-slate-400" />
+                        )}
+                    </button>
+
+                    {showAdvanced && (
+                        <div className="space-y-8 mt-8 animate-in slide-in-from-top-4 fade-in duration-300">
+                            {/* TOP ROW: TECHNIQUE & PRODUCTIVITÉ */}
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                {/* PRODUCTIVITÉ TYPO (M1) */}
+                                <div className="bg-white/60 dark:bg-brand-card/60 backdrop-blur-md border border-slate-200 dark:border-slate-700/50 rounded-2xl p-6">
+                                    <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-3">
+                                        <div className="p-2 bg-purple-600 rounded-lg text-white">
+                                            <LayoutTemplate className="w-5 h-5" />
+                                        </div>
+                                        Approche Technique : Cadences (Log/Jour)
+                                    </h3>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        {(Object.keys(config.productivity.typologies) as Array<keyof TypologyPerformance>).map((type) => (
+                                            <div key={type} className="relative">
+                                                <label className="block text-xs font-bold text-slate-500 dark:text-slate-300 mb-1">{type}</label>
+                                                <div className="relative">
+                                                    <input
+                                                        type="number"
+                                                        value={config.productivity.typologies[type]}
+                                                        onChange={(e) => handleTypologyYieldChange(type, parseFloat(e.target.value))}
+                                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 pl-3 pr-16 text-slate-900 dark:text-white focus:ring-1 focus:ring-purple-500 outline-none"
+                                                    />
+                                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 dark:text-slate-500">u/jour</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* COUTS & SURFACE */}
+                                <div className="bg-brand-card/60 backdrop-blur-md border border-slate-700/50 rounded-2xl p-6">
+                                    <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
+                                        <div className="p-2 bg-brand-blue rounded-lg text-white">
+                                            <Users className="w-5 h-5" />
+                                        </div>
+                                        Coût & Productivité Surface
+                                    </h3>
+
+                                    <div className="space-y-6">
+                                        <div>
+                                            <label className="block text-sm font-medium text-slate-500 dark:text-slate-300 mb-2">Coût Équipe / Jour (€ HT)</label>
+                                            <div className="relative">
+                                                <input
+                                                    type="number"
+                                                    value={config.dailyRate}
+                                                    onChange={(e) => handleChange('dailyRate', parseFloat(e.target.value))}
+                                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-green outline-none font-mono text-xl font-bold"
+                                                />
+                                                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500">€</span>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-slate-500 dark:text-slate-300 mb-2">Prix Plancher / Jour (€ HT)</label>
+                                            <div className="relative">
+                                                <input
+                                                    type="number"
+                                                    value={config.floorRate || 735}
+                                                    onChange={(e) => handleChange('floorRate', parseFloat(e.target.value))}
+                                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500 outline-none font-mono text-xl font-bold"
+                                                />
+                                                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500">€</span>
+                                            </div>
+                                            <p className="text-[10px] text-slate-500 mt-1 italic">Prix minimum vital en dessous duquel vous ne vendez pas.</p>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+                                            <div>
+                                                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase">Scénario Pessimiste</label>
+                                                <label className="block text-sm text-slate-500 dark:text-slate-300 mb-1">Rendement Min (m²/j)</label>
+                                                <input
+                                                    type="number"
+                                                    value={config.productivity.surfaceMin}
+                                                    onChange={(e) => handleChange('surfaceMin', parseFloat(e.target.value), 'productivity')}
+                                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-slate-900 dark:text-white font-mono"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase">Scénario Optimiste</label>
+                                                <label className="block text-sm text-slate-500 dark:text-slate-300 mb-1">Rendement Max (m²/j)</label>
+                                                <input
+                                                    type="number"
+                                                    value={config.productivity.surfaceMax}
+                                                    onChange={(e) => handleChange('surfaceMax', parseFloat(e.target.value), 'productivity')}
+                                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-slate-900 dark:text-white font-mono"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* MIDDLE ROW: PRIX MARCHÉ (M2) */}
+                            <div className="bg-white/60 dark:bg-brand-card/60 backdrop-blur-md border border-slate-200 dark:border-slate-700/50 rounded-2xl p-6">
+                                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-3">
+                                    <div className="p-2 bg-emerald-600 rounded-lg text-white">
+                                        <Coins className="w-5 h-5" />
+                                    </div>
+                                    Approche Marché (Comparatif)
+                                </h3>
+
+                                <div className="space-y-4">
+                                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                                        Définissez le prix moyen au m² utilisé pour la comparaison commerciale.
+                                    </p>
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-500 dark:text-slate-300 mb-2">Prix Marché (€/m²)</label>
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                            {[1, 2, 3, 4].map(phase => (
+                                                <div key={phase}>
+                                                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 text-center">{phase} Phase{phase > 1 ? 's' : ''}</label>
+                                                    <div className="relative">
+                                                        <input
+                                                            type="number"
+                                                            step="0.1"
+                                                            value={config.marketRate?.[phase] || 0}
+                                                            onChange={(e) => {
+                                                                const newVal = parseFloat(e.target.value);
+                                                                setConfig(prev => ({
+                                                                    ...prev,
+                                                                    marketRate: {
+                                                                        ...prev.marketRate,
+                                                                        [phase]: newVal
+                                                                    }
+                                                                }));
+                                                                setIsSaved(false);
+                                                            }}
+                                                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-2 py-2 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none font-mono text-center font-bold"
+                                                        />
+                                                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate-400 dark:text-slate-500">€</span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
             </div>
