@@ -459,7 +459,10 @@ export const Matrix = () => {
                                                                             <div className="flex justify-between gap-2 text-[10px] text-slate-400 border-b border-violet-500/20 pb-1"><span>Prix Unitaire :</span><span className="font-mono text-white">{row.rowVal} €/m²</span></div>
                                                                             <div className="flex justify-between gap-2 pt-1 font-bold"><span className="text-violet-400">Prix Surface :</span><span className="font-mono text-white">{cell.prixMarche.toLocaleString('fr-FR')} €</span></div>
                                                                         </div>
-                                                                        <div className="pt-2 border-t border-slate-700 flex justify-between gap-4"><span className="text-slate-300">Écart :</span><span className={`font-bold ${ecart <= thresholds.green ? 'text-emerald-400' : ecart <= thresholds.orange ? 'text-amber-400' : 'text-red-400'}`}>{ecart.toFixed(1)}%</span></div>
+                                                                        <div className="pt-2 border-t border-slate-700 space-y-1">
+                                                                            <div className="flex justify-between gap-4"><span className="text-slate-300">Écart :</span><span className={`font-bold ${ecart <= thresholds.green ? 'text-emerald-400' : ecart <= thresholds.orange ? 'text-amber-400' : 'text-red-400'}`}>{ecart.toFixed(1)}%</span></div>
+                                                                            <div className="flex justify-between gap-4"><span className="text-slate-300">Marge :</span><span className={`font-bold ${margin >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{Math.round(margin).toLocaleString()} €</span></div>
+                                                                        </div>
                                                                     </div>
                                                                 )
                                                             }>
@@ -575,7 +578,10 @@ export const Matrix = () => {
                                                                             <div className="flex justify-between gap-2 text-[10px] text-slate-400 border-b border-violet-500/20 pb-1"><span>Prix Unitaire :</span><span className="font-mono text-white">{row.rowVal} €/u</span></div>
                                                                             <div className="flex justify-between gap-2 pt-1 font-bold"><span className="text-violet-400">Prix Unitaire :</span><span className="font-mono text-white">{cell.prixMarche.toLocaleString('fr-FR')} €</span></div>
                                                                         </div>
-                                                                        <div className="pt-2 border-t border-slate-700 flex justify-between gap-4"><span className="text-slate-300">Écart :</span><span className={`font-bold ${ecart <= thresholds.green ? 'text-emerald-400' : ecart <= thresholds.orange ? 'text-amber-400' : 'text-red-400'}`}>{ecart.toFixed(1)}%</span></div>
+                                                                        <div className="pt-2 border-t border-slate-700 space-y-1">
+                                                                            <div className="flex justify-between gap-4"><span className="text-slate-300">Écart :</span><span className={`font-bold ${ecart <= thresholds.green ? 'text-emerald-400' : ecart <= thresholds.orange ? 'text-amber-400' : 'text-red-400'}`}>{ecart.toFixed(1)}%</span></div>
+                                                                            <div className="flex justify-between gap-4"><span className="text-slate-300">Marge :</span><span className={`font-bold ${margin >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{Math.round(margin).toLocaleString()} €</span></div>
+                                                                        </div>
                                                                     </div>
                                                                 )
                                                             }>
