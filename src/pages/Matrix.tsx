@@ -158,7 +158,7 @@ export const Matrix = () => {
                 if (ecart < bestCell.ecart) bestCell = { ecart, row: rowIdx, col: colIdx, prixProd, prixMarche: prixMarchePhase };
 
                 // Profitability Logic
-                const dailyRateEquiv = totalDays > 0 ? prixMarchePhase / totalDays : 0;
+                const dailyRateEquiv = rowVal * colVal;
                 const margin = prixMarchePhase - (totalDays * floorRate);
 
                 return { prixProd: Math.round(prixProd), prixMarche: Math.round(prixMarchePhase), totalCost: Math.round(totalCost), totalDays, ecart, rowVal, dailyRateEquiv, margin };
@@ -184,7 +184,7 @@ export const Matrix = () => {
                 if (ecart < bestCell.ecart) bestCell = { ecart, row: rowIdx, col: colIdx, prixProd, prixMarche: prixMarchePhase };
 
                 // Profitability Logic
-                const dailyRateEquiv = totalDays > 0 ? prixMarchePhase / totalDays : 0;
+                const dailyRateEquiv = rowVal * colVal;
                 const margin = prixMarchePhase - (totalDays * floorRate);
 
                 return { prixProd: Math.round(prixProd), prixMarche: Math.round(prixMarchePhase), totalCost: Math.round(totalCost), totalDays, ecart, rowVal, dailyRateEquiv, margin };
@@ -423,7 +423,7 @@ export const Matrix = () => {
 
                                                     return (
                                                         <td key={colIdx} className={`p-0 text-center border-b border-r border-slate-100 dark:border-slate-800 last:border-r-0 cursor-crosshair-custom ${cellClass} ${bestClass}`}>
-                                                            <Tooltip className="min-w-[280px]" content={
+                                                            <Tooltip className="min-w-[280px]" disabled={!areTooltipsEnabled} content={
                                                                 showProfitability ? (
                                                                     <div className="space-y-3">
                                                                         <div className="font-bold border-b border-slate-700 pb-1 mb-1 text-xs uppercase tracking-wider text-slate-400">Détails de Rentabilité</div>
@@ -628,10 +628,19 @@ export const Matrix = () => {
                                                                     </div>
                                                                 )
                                                             }>
-                                                                <div className="p-2 h-full flex flex-col items-center justify-center gap-0.5 min-h-[50px]">
-                                                                    <div className="font-bold text-xs text-emerald-700 dark:text-emerald-400">{cell.prixProd.toLocaleString('fr-FR')}</div>
-                                                                    <div className="text-[10px] font-medium text-violet-700 dark:text-violet-400 opacity-80">{cell.prixMarche.toLocaleString('fr-FR')}</div>
-                                                                    <div className="text-[10px] font-bold opacity-60 scale-90 mt-0.5">{ecart.toFixed(1)}%</div>
+                                                                <div className="p-2 h-full flex flex-col items-center justify-center gap-0.5 min-h-[50px] relative">
+                                                                    {showProfitability ? (
+                                                                        <>
+                                                                            <div className="font-bold text-xs">{Math.round(dailyRateEquiv)} €/j</div>
+                                                                            <div className="text-[10px] font-bold opacity-60">Marge: {Math.round(margin).toLocaleString()}€</div>
+                                                                        </>
+                                                                    ) : (
+                                                                        <>
+                                                                            <div className="font-bold text-xs text-emerald-700 dark:text-emerald-400">{cell.prixProd.toLocaleString('fr-FR')}</div>
+                                                                            <div className="text-[10px] font-medium text-violet-700 dark:text-violet-400 opacity-80">{cell.prixMarche.toLocaleString('fr-FR')}</div>
+                                                                            <div className="text-[10px] font-bold opacity-60 scale-90 mt-0.5">{ecart.toFixed(1)}%</div>
+                                                                        </>
+                                                                    )}
                                                                 </div>
                                                             </Tooltip>
                                                         </td>

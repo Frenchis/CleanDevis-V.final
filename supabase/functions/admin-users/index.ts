@@ -146,6 +146,7 @@ Deno.serve(async (req) => {
             });
         }
 
+        console.log("No matching action found for:", action);
         return new Response(JSON.stringify({ error: `Method not allowed or unknown action: ${action}` }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             status: 400,
