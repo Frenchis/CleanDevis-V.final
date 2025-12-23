@@ -548,13 +548,27 @@ export const Matrix = () => {
                                                     const ecart = cell.ecart;
                                                     const dailyRateEquiv = (cell as any).dailyRateEquiv;
                                                     const margin = (cell as any).margin;
-                                                    const cellClass = ecart <= thresholds.green ? 'bg-emerald-100/80 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300' : ecart <= thresholds.orange ? 'bg-amber-100/80 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300' : 'text-slate-500 dark:text-slate-500';
+                                                    let cellClass = "";
+                                                    if (showProfitability) {
+                                                        cellClass = dailyRateEquiv >= (prixJour || 840)
+                                                            ? 'bg-emerald-100/80 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300'
+                                                            : dailyRateEquiv >= floorRate
+                                                                ? 'bg-amber-100/80 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300'
+                                                                : 'bg-red-100/80 dark:bg-red-900/40 text-red-800 dark:text-red-300';
+                                                    } else {
+                                                        cellClass = ecart <= thresholds.green
+                                                            ? 'bg-emerald-100/80 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300'
+                                                            : ecart <= thresholds.orange
+                                                                ? 'bg-amber-100/80 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300'
+                                                                : 'text-slate-500 dark:text-slate-500';
+                                                    }
+
                                                     const isBest = matrixLogement.bestCell.ecart !== Infinity && matrixLogement.bestCell.row === rowIdx && matrixLogement.bestCell.col === colIdx;
                                                     const bestClass = isBest ? "bg-violet-100 dark:bg-violet-900/40 font-bold scale-105 shadow-md z-10" : "";
 
                                                     return (
                                                         <td key={colIdx} className={`p-0 text-center border-b border-r border-slate-100 dark:border-slate-800 last:border-r-0 cursor-crosshair-custom ${cellClass} ${bestClass}`}>
-                                                            <Tooltip className="min-w-[280px]" content={
+                                                            <Tooltip className="min-w-[280px]" disabled={!areTooltipsEnabled} content={
                                                                 showProfitability ? (
                                                                     <div className="space-y-3">
                                                                         <div className="font-bold border-b border-slate-700 pb-1 mb-1 text-xs uppercase tracking-wider text-slate-400">Détails de Rentabilité</div>
