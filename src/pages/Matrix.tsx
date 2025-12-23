@@ -158,7 +158,7 @@ export const Matrix = () => {
                 if (ecart < bestCell.ecart) bestCell = { ecart, row: rowIdx, col: colIdx, prixProd, prixMarche: prixMarchePhase };
 
                 // Profitability Logic
-                const dailyRateEquiv = rowVal * colVal;
+                const dailyRateEquiv = totalDays > 0 ? prixMarchePhase / totalDays : 0;
                 const margin = prixMarchePhase - (totalDays * floorRate);
 
                 return { prixProd: Math.round(prixProd), prixMarche: Math.round(prixMarchePhase), totalCost: Math.round(totalCost), totalDays, ecart, rowVal, dailyRateEquiv, margin };
@@ -184,7 +184,7 @@ export const Matrix = () => {
                 if (ecart < bestCell.ecart) bestCell = { ecart, row: rowIdx, col: colIdx, prixProd, prixMarche: prixMarchePhase };
 
                 // Profitability Logic
-                const dailyRateEquiv = rowVal * colVal;
+                const dailyRateEquiv = totalDays > 0 ? prixMarchePhase / totalDays : 0;
                 const margin = prixMarchePhase - (totalDays * floorRate);
 
                 return { prixProd: Math.round(prixProd), prixMarche: Math.round(prixMarchePhase), totalCost: Math.round(totalCost), totalDays, ecart, rowVal, dailyRateEquiv, margin };
@@ -373,8 +373,14 @@ export const Matrix = () => {
                             <div className="flex items-center gap-2 mb-3">
                                 <TrendingUp className="w-4 h-4 text-violet-500" />
                                 <h3 className="text-sm font-bold text-violet-600 dark:text-violet-400">Matrice Surface (Prix/m² vs Prix Cadence)</h3>
+                                <div className="text-[10px] text-slate-400 ml-auto italic">
+                                    {areTooltipsEnabled ? "Cliquez pour désactiver les détails" : "Cliquez pour activer les détails"}
+                                </div>
                             </div>
-                            <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+                            <div
+                                className={`overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 ${areTooltipsEnabled ? 'cursor-pointer' : 'cursor-crosshair'}`}
+                                onClick={toggleTooltips}
+                            >
                                 <table className="w-full text-sm">
                                     <thead>
                                         <tr>
