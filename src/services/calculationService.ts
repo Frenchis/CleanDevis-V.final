@@ -25,6 +25,7 @@ const PHASE_COEFFS: Record<number, number> = {
 // --- LEGACY CONFIG (Kept for Settings.tsx compatibility) ---
 export const DEFAULT_CONFIG: GlobalConfig = {
   dailyRate: BASIS_DAILY_RATE,
+  floorRate: 735,
   productivity: {
     surfaceMin: YIELD_LOW,
     surfaceMax: YIELD_HIGH,

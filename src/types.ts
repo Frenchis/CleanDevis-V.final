@@ -94,6 +94,7 @@ export interface BreakdownItem {
 
 export interface GlobalConfig {
   dailyRate: number; // Coût équipe jour (840€)
+  floorRate?: number; // Prix plancher jour (ex: 735€)
 
   productivity: {
     surfaceMin: number; // m²/jour (ex: 300) -> Méthode 3

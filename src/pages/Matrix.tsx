@@ -66,6 +66,8 @@ export const Matrix = () => {
     const [logementsJourValues, setLogementsJourValues] = useState<number[]>([5, 6, 7]);
 
     const [thresholds, setThresholds] = useState({ green: 5, orange: 10 });
+    const [floorRate, setFloorRate] = useState(735);
+    const [showProfitability, setShowProfitability] = useState(false);
 
     // Load from Supabase on mount
     useEffect(() => {
@@ -94,6 +96,9 @@ export const Matrix = () => {
 
                 if (globalData && globalData.value && globalData.value.matrixThresholds) {
                     setThresholds(globalData.value.matrixThresholds);
+                }
+                if (globalData && globalData.value && globalData.value.floorRate) {
+                    setFloorRate(globalData.value.floorRate);
                 }
             } catch (err) {
                 console.error("Error loading matrix settings:", err);
@@ -142,7 +147,11 @@ export const Matrix = () => {
                 const ecart = prixMarchePhase > 0 ? Math.abs((prixProd - prixMarchePhase) / prixMarchePhase * 100) : Infinity;
                 if (ecart < bestCell.ecart) bestCell = { ecart, row: rowIdx, col: colIdx, prixProd, prixMarche: prixMarchePhase };
 
-                return { prixProd: Math.round(prixProd), prixMarche: Math.round(prixMarchePhase), totalCost: Math.round(totalCost), totalDays, ecart, rowVal };
+                // Profitability Logic
+                const dailyRateEquiv = totalDays > 0 ? prixMarchePhase / totalDays : 0;
+                const margin = prixMarchePhase - (totalDays * floorRate);
+
+                return { prixProd: Math.round(prixProd), prixMarche: Math.round(prixMarchePhase), totalCost: Math.round(totalCost), totalDays, ecart, rowVal, dailyRateEquiv, margin };
             });
             return { rowVal, cells };
         });
@@ -164,7 +173,11 @@ export const Matrix = () => {
                 const ecart = prixMarchePhase > 0 ? Math.abs((prixProd - prixMarchePhase) / prixMarchePhase * 100) : Infinity;
                 if (ecart < bestCell.ecart) bestCell = { ecart, row: rowIdx, col: colIdx, prixProd, prixMarche: prixMarchePhase };
 
-                return { prixProd: Math.round(prixProd), prixMarche: Math.round(prixMarchePhase), totalCost: Math.round(totalCost), totalDays, ecart, rowVal };
+                // Profitability Logic
+                const dailyRateEquiv = totalDays > 0 ? prixMarchePhase / totalDays : 0;
+                const margin = prixMarchePhase - (totalDays * floorRate);
+
+                return { prixProd: Math.round(prixProd), prixMarche: Math.round(prixMarchePhase), totalCost: Math.round(totalCost), totalDays, ecart, rowVal, dailyRateEquiv, margin };
             });
             return { rowVal, cells };
         });
@@ -282,18 +295,51 @@ export const Matrix = () => {
                     </div>
                     {/* Légende only if visible data */}
                     {(showSurface || showLogement) && (
-                        <div className="flex flex-wrap items-center gap-3 text-xs bg-slate-100 dark:bg-slate-800/50 p-2 rounded-lg">
-                            <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded bg-emerald-100 dark:bg-emerald-900/50 border border-emerald-300 dark:border-emerald-700"></div>
-                                <span className="text-slate-600 dark:text-slate-400">Excellent (≤{thresholds.green}%)</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded bg-amber-100 dark:bg-amber-900/50 border border-amber-300 dark:border-amber-700"></div>
-                                <span className="text-slate-600 dark:text-slate-400">Bon ({thresholds.green}-{thresholds.orange}%)</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"></div>
-                                <span className="text-slate-600 dark:text-slate-400">&gt;{thresholds.orange}%</span>
+                        <div className="flex flex-wrap items-center gap-4">
+                            {/* Toggle Mode Rentabilité */}
+                            <button
+                                onClick={() => setShowProfitability(!showProfitability)}
+                                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${showProfitability
+                                    ? 'bg-amber-500 text-white border-amber-600 shadow-sm'
+                                    : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-amber-500'
+                                    }`}
+                            >
+                                <TrendingUp className={`w-3.5 h-3.5 ${showProfitability ? 'animate-pulse' : ''}`} />
+                                {showProfitability ? 'Mode Rentabilité : ON' : 'Mode Rentabilité : OFF'}
+                            </button>
+
+                            <div className="flex flex-wrap items-center gap-3 text-xs bg-slate-100 dark:bg-slate-800/50 p-2 rounded-lg">
+                                {!showProfitability ? (
+                                    <>
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-3 h-3 rounded bg-emerald-100 dark:bg-emerald-900/50 border border-emerald-300 dark:border-emerald-700"></div>
+                                            <span className="text-slate-600 dark:text-slate-400">Excellent (≤{thresholds.green}%)</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-3 h-3 rounded bg-amber-100 dark:bg-amber-900/50 border border-amber-300 dark:border-amber-700"></div>
+                                            <span className="text-slate-600 dark:text-slate-400">Bon ({thresholds.green}-{thresholds.orange}%)</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-3 h-3 rounded bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"></div>
+                                            <span className="text-slate-600 dark:text-slate-400">&gt;{thresholds.orange}%</span>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-3 h-3 rounded bg-emerald-100 dark:bg-emerald-900/50 border border-emerald-300 dark:border-emerald-700"></div>
+                                            <span className="text-slate-600 dark:text-slate-400">Rentable (≥{prixJour || 840}€/j)</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-3 h-3 rounded bg-amber-100 dark:bg-amber-900/50 border border-amber-300 dark:border-amber-700"></div>
+                                            <span className="text-slate-600 dark:text-slate-400">Négo ({floorRate}-{prixJour || 840}€/j)</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-3 h-3 rounded bg-red-100 dark:bg-red-900/50 border border-red-300 dark:border-red-700"></div>
+                                            <span className="text-slate-600 dark:text-slate-400">Perte (&lt;{floorRate}€/j)</span>
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         </div>
                     )}
@@ -342,35 +388,80 @@ export const Matrix = () => {
                                                 <td className="p-2 font-bold text-center text-xs text-slate-700 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700/50 bg-slate-50/30 dark:bg-slate-800/30">{row.rowVal.toFixed(2)} €</td>
                                                 {row.cells.map((cell, colIdx) => {
                                                     const ecart = cell.ecart;
-                                                    const cellClass = ecart <= thresholds.green ? 'bg-emerald-100/80 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300' : ecart <= thresholds.orange ? 'bg-amber-100/80 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300' : 'text-slate-500 dark:text-slate-500';
+                                                    const dailyRateEquiv = (cell as any).dailyRateEquiv;
+                                                    const margin = (cell as any).margin;
+                                                    const isLowProfit = dailyRateEquiv < floorRate;
+
+                                                    let cellClass = "";
+                                                    if (showProfitability) {
+                                                        cellClass = dailyRateEquiv >= (prixJour || 840)
+                                                            ? 'bg-emerald-100/80 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300'
+                                                            : dailyRateEquiv >= floorRate
+                                                                ? 'bg-amber-100/80 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300'
+                                                                : 'bg-red-100/80 dark:bg-red-900/40 text-red-800 dark:text-red-300';
+                                                    } else {
+                                                        cellClass = ecart <= thresholds.green
+                                                            ? 'bg-emerald-100/80 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300'
+                                                            : ecart <= thresholds.orange
+                                                                ? 'bg-amber-100/80 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300'
+                                                                : 'text-slate-500 dark:text-slate-500';
+                                                    }
+
                                                     const isBest = matrixSurface.bestCell.ecart !== Infinity && matrixSurface.bestCell.row === rowIdx && matrixSurface.bestCell.col === colIdx;
                                                     const bestClass = isBest ? "bg-violet-100 dark:bg-violet-900/40 font-bold scale-105 shadow-md z-10" : "";
+                                                    const floorClass = isLowProfit ? "ring-2 ring-red-500 ring-inset" : "";
 
                                                     return (
-                                                        <td key={colIdx} className={`p-0 text-center border-b border-r border-slate-100 dark:border-slate-800 last:border-r-0 ${cellClass} ${bestClass}`}>
-                                                            <Tooltip className="min-w-[240px]" content={
+                                                        <td key={colIdx} className={`p-0 text-center border-b border-r border-slate-100 dark:border-slate-800 last:border-r-0 cursor-help ${cellClass} ${bestClass} ${floorClass}`}>
+                                                            <Tooltip className="min-w-[280px]" content={
                                                                 <div className="space-y-3">
-                                                                    <div className="font-bold border-b border-slate-700 pb-1 mb-1 text-xs uppercase tracking-wider text-slate-400">Détails Calcul</div>
+                                                                    <div className="font-bold border-b border-slate-700 pb-1 mb-1 text-xs uppercase tracking-wider text-slate-400">Détails de Rentabilité</div>
+
+                                                                    <div className="grid grid-cols-2 gap-2">
+                                                                        <div className="bg-slate-800/50 p-2 rounded border border-slate-700/50">
+                                                                            <div className="text-[10px] text-slate-500 uppercase">Équiv. Jour</div>
+                                                                            <div className={`text-sm font-bold ${dailyRateEquiv >= (prixJour || 840) ? 'text-emerald-400' : dailyRateEquiv >= floorRate ? 'text-amber-400' : 'text-red-400'}`}>
+                                                                                {Math.round(dailyRateEquiv).toLocaleString()} €/j
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="bg-slate-800/50 p-2 rounded border border-slate-700/50">
+                                                                            <div className="text-[10px] text-slate-500 uppercase">Marge / Plancher</div>
+                                                                            <div className={`text-sm font-bold ${margin >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                                                                {Math.round(margin).toLocaleString()} €
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+
                                                                     <div className="space-y-1 bg-emerald-500/10 p-2 rounded border border-emerald-500/20">
-                                                                        <div className="text-[10px] font-bold text-emerald-400 uppercase mb-1">Méthode Cadence</div>
-                                                                        <div className="flex justify-between gap-2 text-[10px] text-slate-400"><span>Surface Totale :</span><span className="font-mono text-white">{totalSurfaceProject.toLocaleString()} m²</span></div>
-                                                                        <div className="flex justify-between gap-2 text-[10px] text-slate-400"><span>Cadence :</span><span className="font-mono text-white">{matrixSurface.colValues[colIdx]} m²/j</span></div>
-                                                                        <div className="flex justify-between gap-2 text-[10px] text-slate-400 border-b border-emerald-500/20 pb-1"><span>Durée Projet :</span><span className="font-mono text-white">{Number(cell.totalDays).toFixed(1)} jours</span></div>
-                                                                        <div className="flex justify-between gap-2 pt-1 font-bold"><span className="text-emerald-400">Prix Cadence :</span><span className="font-mono text-white">{cell.prixProd.toLocaleString('fr-FR')} €</span></div>
+                                                                        <div className="text-[10px] font-bold text-emerald-400 uppercase mb-1">Cibles</div>
+                                                                        <div className="flex justify-between gap-2 text-[10px] text-slate-400"><span>Prix Plancher :</span><span className="font-mono text-white">{(cell.totalDays * floorRate).toLocaleString('fr-FR')} €</span></div>
+                                                                        <div className="flex justify-between gap-2 text-[10px] text-slate-400"><span>Prix Standard :</span><span className="font-mono text-white">{cell.prixProd.toLocaleString('fr-FR')} €</span></div>
                                                                     </div>
-                                                                    <div className="space-y-1 bg-violet-500/10 p-2 rounded border border-violet-500/20">
-                                                                        <div className="text-[10px] font-bold text-violet-400 uppercase mb-1">Méthode Surface</div>
-                                                                        <div className="flex justify-between gap-2 text-[10px] text-slate-400"><span>Surface Projet :</span><span className="font-mono text-white">{safeSurface.toLocaleString()} m²</span></div>
-                                                                        <div className="flex justify-between gap-2 text-[10px] text-slate-400 border-b border-violet-500/20 pb-1"><span>Prix Unitaire :</span><span className="font-mono text-white">{row.rowVal} €/m²</span></div>
-                                                                        <div className="flex justify-between gap-2 pt-1 font-bold"><span className="text-violet-400">Prix Surface :</span><span className="font-mono text-white">{cell.prixMarche.toLocaleString('fr-FR')} €</span></div>
+
+                                                                    <div className="pt-1 text-[10px] text-slate-500 italic">
+                                                                        * Marge calculée par rapport au prix plancher de {floorRate}€/j.
                                                                     </div>
-                                                                    <div className="pt-2 border-t border-slate-700 flex justify-between gap-4"><span className="text-slate-300">Écart :</span><span className={`font-bold ${ecart <= thresholds.green ? 'text-emerald-400' : ecart <= thresholds.orange ? 'text-amber-400' : 'text-red-400'}`}>{ecart.toFixed(1)}%</span></div>
+
+                                                                    <div className="pt-2 border-t border-slate-700 flex justify-between gap-4">
+                                                                        <span className="text-slate-300">Écart Méthodes:</span>
+                                                                        <span className={`font-bold ${ecart <= thresholds.green ? 'text-emerald-400' : ecart <= thresholds.orange ? 'text-amber-400' : 'text-red-400'}`}>{ecart.toFixed(1)}%</span>
+                                                                    </div>
                                                                 </div>
                                                             }>
                                                                 <div className="p-2 h-full flex flex-col items-center justify-center gap-0.5 min-h-[50px]">
-                                                                    <div className="font-bold text-xs text-emerald-700 dark:text-emerald-400">{cell.prixProd.toLocaleString('fr-FR')}</div>
-                                                                    <div className="text-[10px] font-medium text-violet-700 dark:text-violet-400 opacity-80">{cell.prixMarche.toLocaleString('fr-FR')}</div>
-                                                                    <div className="text-[10px] font-bold opacity-60 scale-90 mt-0.5">{ecart.toFixed(1)}%</div>
+                                                                    {showProfitability ? (
+                                                                        <>
+                                                                            <div className="font-bold text-xs">{Math.round(dailyRateEquiv)} €/j</div>
+                                                                            <div className="text-[10px] font-bold opacity-60">Marge: {Math.round(margin).toLocaleString()}€</div>
+                                                                        </>
+                                                                    ) : (
+                                                                        <>
+                                                                            <div className="font-bold text-xs text-emerald-700 dark:text-emerald-400">{cell.prixProd.toLocaleString('fr-FR')}</div>
+                                                                            <div className="text-[10px] font-medium text-violet-700 dark:text-violet-400 opacity-80">{cell.prixMarche.toLocaleString('fr-FR')}</div>
+                                                                            <div className="text-[10px] font-bold opacity-60 scale-90 mt-0.5">{ecart.toFixed(1)}%</div>
+                                                                        </>
+                                                                    )}
+                                                                    {isLowProfit && <div className="absolute top-1 right-1 text-red-500">⚠️</div>}
                                                                 </div>
                                                             </Tooltip>
                                                         </td>

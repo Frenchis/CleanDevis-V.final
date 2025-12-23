@@ -44,7 +44,7 @@ export const Changelog = () => {
                             Historique
                         </h1>
                         <p className="text-xs text-slate-500 dark:text-slate-400">
-                            {displayData.length} mises à jour
+                            {displayData.length} dernières mises à jour
                         </p>
                     </div>
                 </div>

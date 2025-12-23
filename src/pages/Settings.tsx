@@ -287,6 +287,20 @@ export const Settings = () => {
                                 </div>
                             </div>
 
+                            <div>
+                                <label className="block text-sm font-medium text-slate-500 dark:text-slate-300 mb-2">Prix Plancher / Jour (€ HT)</label>
+                                <div className="relative">
+                                    <input
+                                        type="number"
+                                        value={config.floorRate || 735}
+                                        onChange={(e) => handleChange('floorRate', parseFloat(e.target.value))}
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500 outline-none font-mono text-xl font-bold"
+                                    />
+                                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500">€</span>
+                                </div>
+                                <p className="text-[10px] text-slate-500 mt-1 italic">Prix minimum vital en dessous duquel vous ne vendez pas.</p>
+                            </div>
+
                             <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-200 dark:border-slate-700">
                                 <div>
                                     <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase">Scénario Pessimiste</label>
