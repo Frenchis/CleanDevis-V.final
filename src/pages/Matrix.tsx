@@ -412,41 +412,56 @@ export const Matrix = () => {
                                                     const floorClass = isLowProfit ? "ring-2 ring-red-500 ring-inset" : "";
 
                                                     return (
-                                                        <td key={colIdx} className={`p-0 text-center border-b border-r border-slate-100 dark:border-slate-800 last:border-r-0 cursor-help ${cellClass} ${bestClass} ${floorClass}`}>
+                                                        <td key={colIdx} className={`p-0 text-center border-b border-r border-slate-100 dark:border-slate-800 last:border-r-0 cursor-help ${cellClass} ${bestClass}`}>
                                                             <Tooltip className="min-w-[280px]" content={
-                                                                <div className="space-y-3">
-                                                                    <div className="font-bold border-b border-slate-700 pb-1 mb-1 text-xs uppercase tracking-wider text-slate-400">Détails de Rentabilité</div>
+                                                                showProfitability ? (
+                                                                    <div className="space-y-3">
+                                                                        <div className="font-bold border-b border-slate-700 pb-1 mb-1 text-xs uppercase tracking-wider text-slate-400">Détails de Rentabilité</div>
 
-                                                                    <div className="grid grid-cols-2 gap-2">
-                                                                        <div className="bg-slate-800/50 p-2 rounded border border-slate-700/50">
-                                                                            <div className="text-[10px] text-slate-500 uppercase">Équiv. Jour</div>
-                                                                            <div className={`text-sm font-bold ${dailyRateEquiv >= (prixJour || 840) ? 'text-emerald-400' : dailyRateEquiv >= floorRate ? 'text-amber-400' : 'text-red-400'}`}>
-                                                                                {Math.round(dailyRateEquiv).toLocaleString()} €/j
+                                                                        <div className="grid grid-cols-2 gap-2">
+                                                                            <div className="bg-slate-800/50 p-2 rounded border border-slate-700/50">
+                                                                                <div className="text-[10px] text-slate-500 uppercase">Équiv. Jour</div>
+                                                                                <div className={`text-sm font-bold ${dailyRateEquiv >= (prixJour || 840) ? 'text-emerald-400' : dailyRateEquiv >= floorRate ? 'text-amber-400' : 'text-red-400'}`}>
+                                                                                    {Math.round(dailyRateEquiv).toLocaleString()} €/j
+                                                                                </div>
+                                                                            </div>
+                                                                            <div className="bg-slate-800/50 p-2 rounded border border-slate-700/50">
+                                                                                <div className="text-[10px] text-slate-500 uppercase">Marge / Plancher</div>
+                                                                                <div className={`text-sm font-bold ${margin >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                                                                    {Math.round(margin).toLocaleString()} €
+                                                                                </div>
                                                                             </div>
                                                                         </div>
-                                                                        <div className="bg-slate-800/50 p-2 rounded border border-slate-700/50">
-                                                                            <div className="text-[10px] text-slate-500 uppercase">Marge / Plancher</div>
-                                                                            <div className={`text-sm font-bold ${margin >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                                                                                {Math.round(margin).toLocaleString()} €
-                                                                            </div>
+
+                                                                        <div className="space-y-1 bg-emerald-500/10 p-2 rounded border border-emerald-500/20">
+                                                                            <div className="text-[10px] font-bold text-emerald-400 uppercase mb-1">Cibles</div>
+                                                                            <div className="flex justify-between gap-2 text-[10px] text-slate-400"><span>Prix Plancher :</span><span className="font-mono text-white">{(cell.totalDays * floorRate).toLocaleString('fr-FR')} €</span></div>
+                                                                            <div className="flex justify-between gap-2 text-[10px] text-slate-400"><span>Prix Standard :</span><span className="font-mono text-white">{cell.prixProd.toLocaleString('fr-FR')} €</span></div>
+                                                                        </div>
+
+                                                                        <div className="pt-1 text-[10px] text-slate-500 italic">
+                                                                            * Marge calculée par rapport au prix plancher de {floorRate}€/j.
                                                                         </div>
                                                                     </div>
-
-                                                                    <div className="space-y-1 bg-emerald-500/10 p-2 rounded border border-emerald-500/20">
-                                                                        <div className="text-[10px] font-bold text-emerald-400 uppercase mb-1">Cibles</div>
-                                                                        <div className="flex justify-between gap-2 text-[10px] text-slate-400"><span>Prix Plancher :</span><span className="font-mono text-white">{(cell.totalDays * floorRate).toLocaleString('fr-FR')} €</span></div>
-                                                                        <div className="flex justify-between gap-2 text-[10px] text-slate-400"><span>Prix Standard :</span><span className="font-mono text-white">{cell.prixProd.toLocaleString('fr-FR')} €</span></div>
+                                                                ) : (
+                                                                    <div className="space-y-3">
+                                                                        <div className="font-bold border-b border-slate-700 pb-1 mb-1 text-xs uppercase tracking-wider text-slate-400">Détails Calcul</div>
+                                                                        <div className="space-y-1 bg-emerald-500/10 p-2 rounded border border-emerald-500/20">
+                                                                            <div className="text-[10px] font-bold text-emerald-400 uppercase mb-1">Méthode Cadence</div>
+                                                                            <div className="flex justify-between gap-2 text-[10px] text-slate-400"><span>Surface Totale :</span><span className="font-mono text-white">{totalSurfaceProject.toLocaleString()} m²</span></div>
+                                                                            <div className="flex justify-between gap-2 text-[10px] text-slate-400"><span>Cadence :</span><span className="font-mono text-white">{matrixSurface.colValues[colIdx]} m²/j</span></div>
+                                                                            <div className="flex justify-between gap-2 text-[10px] text-slate-400 border-b border-emerald-500/20 pb-1"><span>Durée Projet :</span><span className="font-mono text-white">{Number(cell.totalDays).toFixed(1)} jours</span></div>
+                                                                            <div className="flex justify-between gap-2 pt-1 font-bold"><span className="text-emerald-400">Prix Cadence :</span><span className="font-mono text-white">{cell.prixProd.toLocaleString('fr-FR')} €</span></div>
+                                                                        </div>
+                                                                        <div className="space-y-1 bg-violet-500/10 p-2 rounded border border-violet-500/20">
+                                                                            <div className="text-[10px] font-bold text-violet-400 uppercase mb-1">Méthode Surface</div>
+                                                                            <div className="flex justify-between gap-2 text-[10px] text-slate-400"><span>Surface Projet :</span><span className="font-mono text-white">{safeSurface.toLocaleString()} m²</span></div>
+                                                                            <div className="flex justify-between gap-2 text-[10px] text-slate-400 border-b border-violet-500/20 pb-1"><span>Prix Unitaire :</span><span className="font-mono text-white">{row.rowVal} €/m²</span></div>
+                                                                            <div className="flex justify-between gap-2 pt-1 font-bold"><span className="text-violet-400">Prix Surface :</span><span className="font-mono text-white">{cell.prixMarche.toLocaleString('fr-FR')} €</span></div>
+                                                                        </div>
+                                                                        <div className="pt-2 border-t border-slate-700 flex justify-between gap-4"><span className="text-slate-300">Écart :</span><span className={`font-bold ${ecart <= thresholds.green ? 'text-emerald-400' : ecart <= thresholds.orange ? 'text-amber-400' : 'text-red-400'}`}>{ecart.toFixed(1)}%</span></div>
                                                                     </div>
-
-                                                                    <div className="pt-1 text-[10px] text-slate-500 italic">
-                                                                        * Marge calculée par rapport au prix plancher de {floorRate}€/j.
-                                                                    </div>
-
-                                                                    <div className="pt-2 border-t border-slate-700 flex justify-between gap-4">
-                                                                        <span className="text-slate-300">Écart Méthodes:</span>
-                                                                        <span className={`font-bold ${ecart <= thresholds.green ? 'text-emerald-400' : ecart <= thresholds.orange ? 'text-amber-400' : 'text-red-400'}`}>{ecart.toFixed(1)}%</span>
-                                                                    </div>
-                                                                </div>
+                                                                )
                                                             }>
                                                                 <div className="p-2 h-full flex flex-col items-center justify-center gap-0.5 min-h-[50px]">
                                                                     {showProfitability ? (
@@ -511,25 +526,57 @@ export const Matrix = () => {
                                                     const bestClass = isBest ? "bg-violet-100 dark:bg-violet-900/40 font-bold scale-105 shadow-md z-10" : "";
 
                                                     return (
-                                                        <td key={colIdx} className={`p-0 text-center border-b border-r border-slate-100 dark:border-slate-800 last:border-r-0 ${cellClass} ${bestClass}`}>
-                                                            <Tooltip className="min-w-[240px]" content={
-                                                                <div className="space-y-3">
-                                                                    <div className="font-bold border-b border-slate-700 pb-1 mb-1 text-xs uppercase tracking-wider text-slate-400">Détails Calcul</div>
-                                                                    <div className="space-y-1 bg-emerald-500/10 p-2 rounded border border-emerald-500/20">
-                                                                        <div className="text-[10px] font-bold text-emerald-400 uppercase mb-1">Méthode Cadence</div>
-                                                                        <div className="flex justify-between gap-2 text-[10px] text-slate-400"><span>Volume Total :</span><span className="font-mono text-white">{totalUnitsProject.toLocaleString()} u</span></div>
-                                                                        <div className="flex justify-between gap-2 text-[10px] text-slate-400"><span>Cadence :</span><span className="font-mono text-white">{matrixLogement.colValues[colIdx]} u/j</span></div>
-                                                                        <div className="flex justify-between gap-2 text-[10px] text-slate-400 border-b border-emerald-500/20 pb-1"><span>Durée Projet :</span><span className="font-mono text-white">{Number(cell.totalDays).toFixed(1)} jours</span></div>
-                                                                        <div className="flex justify-between gap-2 pt-1 font-bold"><span className="text-emerald-400">Prix Cadence :</span><span className="font-mono text-white">{cell.prixProd.toLocaleString('fr-FR')} €</span></div>
+                                                    return (
+                                                        <td key={colIdx} className={`p-0 text-center border-b border-r border-slate-100 dark:border-slate-800 last:border-r-0 cursor-help ${cellClass} ${bestClass}`}>
+                                                            <Tooltip className="min-w-[280px]" content={
+                                                                showProfitability ? (
+                                                                    <div className="space-y-3">
+                                                                        <div className="font-bold border-b border-slate-700 pb-1 mb-1 text-xs uppercase tracking-wider text-slate-400">Détails de Rentabilité</div>
+
+                                                                        <div className="grid grid-cols-2 gap-2">
+                                                                            <div className="bg-slate-800/50 p-2 rounded border border-slate-700/50">
+                                                                                <div className="text-[10px] text-slate-500 uppercase">Équiv. Jour</div>
+                                                                                <div className={`text-sm font-bold ${dailyRateEquiv >= (prixJour || 840) ? 'text-emerald-400' : dailyRateEquiv >= floorRate ? 'text-amber-400' : 'text-red-400'}`}>
+                                                                                    {Math.round(dailyRateEquiv).toLocaleString()} €/j
+                                                                                </div>
+                                                                            </div>
+                                                                            <div className="bg-slate-800/50 p-2 rounded border border-slate-700/50">
+                                                                                <div className="text-[10px] text-slate-500 uppercase">Marge / Plancher</div>
+                                                                                <div className={`text-sm font-bold ${margin >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                                                                    {Math.round(margin).toLocaleString()} €
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+
+                                                                        <div className="space-y-1 bg-emerald-500/10 p-2 rounded border border-emerald-500/20">
+                                                                            <div className="text-[10px] font-bold text-emerald-400 uppercase mb-1">Cibles</div>
+                                                                            <div className="flex justify-between gap-2 text-[10px] text-slate-400"><span>Prix Plancher :</span><span className="font-mono text-white">{(cell.totalDays * floorRate).toLocaleString('fr-FR')} €</span></div>
+                                                                            <div className="flex justify-between gap-2 text-[10px] text-slate-400"><span>Prix Standard :</span><span className="font-mono text-white">{cell.prixProd.toLocaleString('fr-FR')} €</span></div>
+                                                                        </div>
+
+                                                                        <div className="pt-1 text-[10px] text-slate-500 italic">
+                                                                            * Marge calculée par rapport au prix plancher de {floorRate}€/j.
+                                                                        </div>
                                                                     </div>
-                                                                    <div className="space-y-1 bg-violet-500/10 p-2 rounded border border-violet-500/20">
-                                                                        <div className="text-[10px] font-bold text-violet-400 uppercase mb-1">Méthode Unitaire</div>
-                                                                        <div className="flex justify-between gap-2 text-[10px] text-slate-400"><span>Logements :</span><span className="font-mono text-white">{safeNbLogements.toLocaleString()} u</span></div>
-                                                                        <div className="flex justify-between gap-2 text-[10px] text-slate-400 border-b border-violet-500/20 pb-1"><span>Prix Unitaire :</span><span className="font-mono text-white">{row.rowVal} €/u</span></div>
-                                                                        <div className="flex justify-between gap-2 pt-1 font-bold"><span className="text-violet-400">Prix Unitaire :</span><span className="font-mono text-white">{cell.prixMarche.toLocaleString('fr-FR')} €</span></div>
+                                                                ) : (
+                                                                    <div className="space-y-3">
+                                                                        <div className="font-bold border-b border-slate-700 pb-1 mb-1 text-xs uppercase tracking-wider text-slate-400">Détails Calcul</div>
+                                                                        <div className="space-y-1 bg-emerald-500/10 p-2 rounded border border-emerald-500/20">
+                                                                            <div className="text-[10px] font-bold text-emerald-400 uppercase mb-1">Méthode Cadence</div>
+                                                                            <div className="flex justify-between gap-2 text-[10px] text-slate-400"><span>Volume Total :</span><span className="font-mono text-white">{totalUnitsProject.toLocaleString()} u</span></div>
+                                                                            <div className="flex justify-between gap-2 text-[10px] text-slate-400"><span>Cadence :</span><span className="font-mono text-white">{matrixLogement.colValues[colIdx]} u/j</span></div>
+                                                                            <div className="flex justify-between gap-2 text-[10px] text-slate-400 border-b border-emerald-500/20 pb-1"><span>Durée Projet :</span><span className="font-mono text-white">{Number(cell.totalDays).toFixed(1)} jours</span></div>
+                                                                            <div className="flex justify-between gap-2 pt-1 font-bold"><span className="text-emerald-400">Prix Cadence :</span><span className="font-mono text-white">{cell.prixProd.toLocaleString('fr-FR')} €</span></div>
+                                                                        </div>
+                                                                        <div className="space-y-1 bg-violet-500/10 p-2 rounded border border-violet-500/20">
+                                                                            <div className="text-[10px] font-bold text-violet-400 uppercase mb-1">Méthode Unitaire</div>
+                                                                            <div className="flex justify-between gap-2 text-[10px] text-slate-400"><span>Logements :</span><span className="font-mono text-white">{safeNbLogements.toLocaleString()} u</span></div>
+                                                                            <div className="flex justify-between gap-2 text-[10px] text-slate-400 border-b border-violet-500/20 pb-1"><span>Prix Unitaire :</span><span className="font-mono text-white">{row.rowVal} €/u</span></div>
+                                                                            <div className="flex justify-between gap-2 pt-1 font-bold"><span className="text-violet-400">Prix Unitaire :</span><span className="font-mono text-white">{cell.prixMarche.toLocaleString('fr-FR')} €</span></div>
+                                                                        </div>
+                                                                        <div className="pt-2 border-t border-slate-700 flex justify-between gap-4"><span className="text-slate-300">Écart :</span><span className={`font-bold ${ecart <= thresholds.green ? 'text-emerald-400' : ecart <= thresholds.orange ? 'text-amber-400' : 'text-red-400'}`}>{ecart.toFixed(1)}%</span></div>
                                                                     </div>
-                                                                    <div className="pt-2 border-t border-slate-700 flex justify-between gap-4"><span className="text-slate-300">Écart :</span><span className={`font-bold ${ecart <= thresholds.green ? 'text-emerald-400' : ecart <= thresholds.orange ? 'text-amber-400' : 'text-red-400'}`}>{ecart.toFixed(1)}%</span></div>
-                                                                </div>
+                                                                )
                                                             }>
                                                                 <div className="p-2 h-full flex flex-col items-center justify-center gap-0.5 min-h-[50px]">
                                                                     <div className="font-bold text-xs text-emerald-700 dark:text-emerald-400">{cell.prixProd.toLocaleString('fr-FR')}</div>
