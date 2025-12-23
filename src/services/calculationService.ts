@@ -39,6 +39,10 @@ export const DEFAULT_CONFIG: GlobalConfig = {
       'Pré-livraison': 'REE-PRELIVR',
       'Livraison': 'REE-LIVRAISON'
     }
+  },
+  matrixThresholds: {
+    green: 5,
+    orange: 10
   }
 };
 

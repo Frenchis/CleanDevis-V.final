@@ -110,6 +110,10 @@ export interface GlobalConfig {
       [key in Phase]?: string; // Phase Name -> Sellsy Product ID/Code
     };
   };
+  matrixThresholds?: {
+    green: number; // Threshold for green color (e.g., 5 for < 5%)
+    orange: number; // Threshold for orange color (e.g., 10 for 5-10%)
+  };
 }
 
 // --- SELLSY TYPES ---

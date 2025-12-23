@@ -109,6 +109,18 @@ export const Settings = () => {
         setIsSaved(false);
     };
 
+    const handleThresholdChange = (key: 'green' | 'orange', value: number) => {
+        setConfig(prev => ({
+            ...prev,
+            matrixThresholds: {
+                green: prev.matrixThresholds?.green ?? 5,
+                orange: prev.matrixThresholds?.orange ?? 10,
+                [key]: value
+            }
+        }));
+        setIsSaved(false);
+    };
+
     const handleProductMappingChange = (phase: string, code: string) => {
         setConfig(prev => ({
             ...prev,
@@ -342,6 +354,48 @@ export const Settings = () => {
                                         </div>
                                     </div>
                                 ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* MATRIX COLOR THRESHOLDS */}
+                <div className="bg-white/60 dark:bg-brand-card/60 backdrop-blur-md border border-slate-200 dark:border-slate-700/50 rounded-2xl p-6">
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-3">
+                        <div className="p-2 bg-violet-600 rounded-lg text-white">
+                            <RefreshCw className="w-5 h-5" />
+                        </div>
+                        Seuils de Couleur (Matrices)
+                    </h3>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-500 dark:text-slate-300 mb-2 font-bold text-emerald-500">Seuil "Excellent" (Vert - %)</label>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">L'écart est considéré comme excellent en dessous de cette valeur.</p>
+                            <div className="relative">
+                                <input
+                                    type="number"
+                                    step="0.1"
+                                    value={config.matrixThresholds?.green ?? 5}
+                                    onChange={(e) => handleThresholdChange('green', parseFloat(e.target.value))}
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none font-mono text-xl font-bold"
+                                />
+                                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500">%</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-slate-500 dark:text-slate-300 mb-2 font-bold text-amber-500">Seuil "Bon" (Orange - %)</label>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">L'écart est considéré comme bon entre le seuil vert et celui-ci.</p>
+                            <div className="relative">
+                                <input
+                                    type="number"
+                                    step="0.1"
+                                    value={config.matrixThresholds?.orange ?? 10}
+                                    onChange={(e) => handleThresholdChange('orange', parseFloat(e.target.value))}
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500 outline-none font-mono text-xl font-bold"
+                                />
+                                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500">%</span>
                             </div>
                         </div>
                     </div>

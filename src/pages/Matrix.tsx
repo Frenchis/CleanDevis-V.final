@@ -65,6 +65,8 @@ export const Matrix = () => {
     const [logementsJourConfig, setLogementsJourConfig] = useState<RangeConfig>({ min: 5, max: 7, step: 1 });
     const [logementsJourValues, setLogementsJourValues] = useState<number[]>([5, 6, 7]);
 
+    const [thresholds, setThresholds] = useState({ green: 5, orange: 10 });
+
     // Load from Supabase on mount
     useEffect(() => {
         const loadMatrixConfig = async () => {
@@ -81,6 +83,17 @@ export const Matrix = () => {
                     if (prixLogement) { setPrixLogementConfig(prixLogement); setPrixLogementValues(generateArray(prixLogement)); }
                     if (m2Jour) { setM2JourConfig(m2Jour); setM2JourValues(generateArray(m2Jour)); }
                     if (logementsJour) { setLogementsJourConfig(logementsJour); setLogementsJourValues(generateArray(logementsJour)); }
+                }
+
+                // Load global_config for thresholds
+                const { data: globalData } = await supabase
+                    .from('settings')
+                    .select('value')
+                    .eq('key', 'global_config')
+                    .single();
+
+                if (globalData && globalData.value && globalData.value.matrixThresholds) {
+                    setThresholds(globalData.value.matrixThresholds);
                 }
             } catch (err) {
                 console.error("Error loading matrix settings:", err);
@@ -238,7 +251,7 @@ export const Matrix = () => {
                                 <span className="text-xl font-bold text-slate-900 dark:text-white">
                                     {matrixSurface.bestCell.ecart !== Infinity ? `${Math.round((matrixSurface.bestCell.prixProd + matrixSurface.bestCell.prixMarche) / 2).toLocaleString('fr-FR')} €` : '---'}
                                 </span>
-                                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${matrixSurface.bestCell.ecart <= 10 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${matrixSurface.bestCell.ecart <= thresholds.green ? 'bg-emerald-100 text-emerald-700' : matrixSurface.bestCell.ecart <= thresholds.orange ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-700'}`}>
                                     {matrixSurface.bestCell.ecart !== Infinity ? `${matrixSurface.bestCell.ecart.toFixed(1)}%` : '-'}
                                 </span>
                             </div>
@@ -251,7 +264,7 @@ export const Matrix = () => {
                                 <span className="text-xl font-bold text-slate-900 dark:text-white">
                                     {matrixLogement.bestCell.ecart !== Infinity ? `${Math.round((matrixLogement.bestCell.prixProd + matrixLogement.bestCell.prixMarche) / 2).toLocaleString('fr-FR')} €` : '---'}
                                 </span>
-                                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${matrixLogement.bestCell.ecart <= 10 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${matrixLogement.bestCell.ecart <= thresholds.green ? 'bg-emerald-100 text-emerald-700' : matrixLogement.bestCell.ecart <= thresholds.orange ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-700'}`}>
                                     {matrixLogement.bestCell.ecart !== Infinity ? `${matrixLogement.bestCell.ecart.toFixed(1)}%` : '-'}
                                 </span>
                             </div>
@@ -272,15 +285,15 @@ export const Matrix = () => {
                         <div className="flex flex-wrap items-center gap-3 text-xs bg-slate-100 dark:bg-slate-800/50 p-2 rounded-lg">
                             <div className="flex items-center gap-2">
                                 <div className="w-3 h-3 rounded bg-emerald-100 dark:bg-emerald-900/50 border border-emerald-300 dark:border-emerald-700"></div>
-                                <span className="text-slate-600 dark:text-slate-400">Excellent (≤10%)</span>
+                                <span className="text-slate-600 dark:text-slate-400">Excellent (≤{thresholds.green}%)</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <div className="w-3 h-3 rounded bg-amber-100 dark:bg-amber-900/50 border border-amber-300 dark:border-amber-700"></div>
-                                <span className="text-slate-600 dark:text-slate-400">Bon (10-20%)</span>
+                                <span className="text-slate-600 dark:text-slate-400">Bon ({thresholds.green}-{thresholds.orange}%)</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <div className="w-3 h-3 rounded bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"></div>
-                                <span className="text-slate-600 dark:text-slate-400">&gt;20%</span>
+                                <span className="text-slate-600 dark:text-slate-400">&gt;{thresholds.orange}%</span>
                             </div>
                         </div>
                     )}
@@ -329,7 +342,7 @@ export const Matrix = () => {
                                                 <td className="p-2 font-bold text-center text-xs text-slate-700 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700/50 bg-slate-50/30 dark:bg-slate-800/30">{row.rowVal.toFixed(2)} €</td>
                                                 {row.cells.map((cell, colIdx) => {
                                                     const ecart = cell.ecart;
-                                                    const cellClass = ecart <= 10 ? 'bg-emerald-100/80 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300' : ecart <= 20 ? 'bg-amber-100/80 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300' : 'text-slate-500 dark:text-slate-500';
+                                                    const cellClass = ecart <= thresholds.green ? 'bg-emerald-100/80 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300' : ecart <= thresholds.orange ? 'bg-amber-100/80 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300' : 'text-slate-500 dark:text-slate-500';
                                                     const isBest = matrixSurface.bestCell.ecart !== Infinity && matrixSurface.bestCell.row === rowIdx && matrixSurface.bestCell.col === colIdx;
                                                     const bestClass = isBest ? "bg-violet-100 dark:bg-violet-900/40 font-bold scale-105 shadow-md z-10" : "";
 
@@ -351,7 +364,7 @@ export const Matrix = () => {
                                                                         <div className="flex justify-between gap-2 text-[10px] text-slate-400 border-b border-violet-500/20 pb-1"><span>Prix Unitaire :</span><span className="font-mono text-white">{row.rowVal} €/m²</span></div>
                                                                         <div className="flex justify-between gap-2 pt-1 font-bold"><span className="text-violet-400">Prix Surface :</span><span className="font-mono text-white">{cell.prixMarche.toLocaleString('fr-FR')} €</span></div>
                                                                     </div>
-                                                                    <div className="pt-2 border-t border-slate-700 flex justify-between gap-4"><span className="text-slate-300">Écart :</span><span className={`font-bold ${ecart <= 10 ? 'text-emerald-400' : ecart <= 20 ? 'text-amber-400' : 'text-red-400'}`}>{ecart.toFixed(1)}%</span></div>
+                                                                    <div className="pt-2 border-t border-slate-700 flex justify-between gap-4"><span className="text-slate-300">Écart :</span><span className={`font-bold ${ecart <= thresholds.green ? 'text-emerald-400' : ecart <= thresholds.orange ? 'text-amber-400' : 'text-red-400'}`}>{ecart.toFixed(1)}%</span></div>
                                                                 </div>
                                                             }>
                                                                 <div className="p-2 h-full flex flex-col items-center justify-center gap-0.5 min-h-[50px]">
@@ -402,7 +415,7 @@ export const Matrix = () => {
                                                 <td className="p-2 font-bold text-center text-xs text-slate-700 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700/50 bg-slate-50/30 dark:bg-slate-800/30">{row.rowVal.toFixed(0)} €</td>
                                                 {row.cells.map((cell, colIdx) => {
                                                     const ecart = cell.ecart;
-                                                    const cellClass = ecart <= 10 ? 'bg-emerald-100/80 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300' : ecart <= 20 ? 'bg-amber-100/80 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300' : 'text-slate-500 dark:text-slate-500';
+                                                    const cellClass = ecart <= thresholds.green ? 'bg-emerald-100/80 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300' : ecart <= thresholds.orange ? 'bg-amber-100/80 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300' : 'text-slate-500 dark:text-slate-500';
                                                     const isBest = matrixLogement.bestCell.ecart !== Infinity && matrixLogement.bestCell.row === rowIdx && matrixLogement.bestCell.col === colIdx;
                                                     const bestClass = isBest ? "bg-violet-100 dark:bg-violet-900/40 font-bold scale-105 shadow-md z-10" : "";
 
@@ -424,7 +437,7 @@ export const Matrix = () => {
                                                                         <div className="flex justify-between gap-2 text-[10px] text-slate-400 border-b border-violet-500/20 pb-1"><span>Prix Unitaire :</span><span className="font-mono text-white">{row.rowVal} €/u</span></div>
                                                                         <div className="flex justify-between gap-2 pt-1 font-bold"><span className="text-violet-400">Prix Unitaire :</span><span className="font-mono text-white">{cell.prixMarche.toLocaleString('fr-FR')} €</span></div>
                                                                     </div>
-                                                                    <div className="pt-2 border-t border-slate-700 flex justify-between gap-4"><span className="text-slate-300">Écart :</span><span className={`font-bold ${ecart <= 10 ? 'text-emerald-400' : ecart <= 20 ? 'text-amber-400' : 'text-red-400'}`}>{ecart.toFixed(1)}%</span></div>
+                                                                    <div className="pt-2 border-t border-slate-700 flex justify-between gap-4"><span className="text-slate-300">Écart :</span><span className={`font-bold ${ecart <= thresholds.green ? 'text-emerald-400' : ecart <= thresholds.orange ? 'text-amber-400' : 'text-red-400'}`}>{ecart.toFixed(1)}%</span></div>
                                                                 </div>
                                                             }>
                                                                 <div className="p-2 h-full flex flex-col items-center justify-center gap-0.5 min-h-[50px]">
