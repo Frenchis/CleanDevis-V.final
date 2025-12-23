@@ -420,7 +420,7 @@ export const Matrix = () => {
 
                                                                         <div className="grid grid-cols-2 gap-2">
                                                                             <div className="bg-slate-800/50 p-2 rounded border border-slate-700/50">
-                                                                                <div className="text-[10px] text-slate-500 uppercase">Équiv. Jour</div>
+                                                                                <div className="text-[10px] text-slate-500 uppercase">CA / Jour</div>
                                                                                 <div className={`text-sm font-bold ${dailyRateEquiv >= (prixJour || 840) ? 'text-emerald-400' : dailyRateEquiv >= floorRate ? 'text-amber-400' : 'text-red-400'}`}>
                                                                                     {Math.round(dailyRateEquiv).toLocaleString()} €/j
                                                                                 </div>
@@ -428,7 +428,7 @@ export const Matrix = () => {
                                                                             <div className="bg-slate-800/50 p-2 rounded border border-slate-700/50">
                                                                                 <div className="text-[10px] text-slate-500 uppercase">Marge</div>
                                                                                 <div className={`text-sm font-bold ${margin >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                                                                                    {Math.round(margin).toLocaleString()} €
+                                                                                    {Math.round(margin).toLocaleString()} € <span className="text-[10px] font-normal opacity-80">({cell.prixMarche > 0 ? Math.round((margin / cell.prixMarche) * 100) : 0}%)</span>
                                                                                 </div>
                                                                             </div>
                                                                         </div>
@@ -538,7 +538,7 @@ export const Matrix = () => {
 
                                                                         <div className="grid grid-cols-2 gap-2">
                                                                             <div className="bg-slate-800/50 p-2 rounded border border-slate-700/50">
-                                                                                <div className="text-[10px] text-slate-500 uppercase">Équiv. Jour</div>
+                                                                                <div className="text-[10px] text-slate-500 uppercase">CA / Jour</div>
                                                                                 <div className={`text-sm font-bold ${dailyRateEquiv >= (prixJour || 840) ? 'text-emerald-400' : dailyRateEquiv >= floorRate ? 'text-amber-400' : 'text-red-400'}`}>
                                                                                     {Math.round(dailyRateEquiv).toLocaleString()} €/j
                                                                                 </div>
@@ -546,7 +546,7 @@ export const Matrix = () => {
                                                                             <div className="bg-slate-800/50 p-2 rounded border border-slate-700/50">
                                                                                 <div className="text-[10px] text-slate-500 uppercase">Marge</div>
                                                                                 <div className={`text-sm font-bold ${margin >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                                                                                    {Math.round(margin).toLocaleString()} €
+                                                                                    {Math.round(margin).toLocaleString()} € <span className="text-[10px] font-normal opacity-80">({cell.prixMarche > 0 ? Math.round((margin / cell.prixMarche) * 100) : 0}%)</span>
                                                                                 </div>
                                                                             </div>
                                                                         </div>
