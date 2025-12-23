@@ -466,7 +466,7 @@ export const Matrix = () => {
                                                                     </div>
                                                                 )
                                                             }>
-                                                                <div className="p-2 h-full flex flex-col items-center justify-center gap-0.5 min-h-[50px]">
+                                                                <div className="p-2 h-full flex flex-col items-center justify-center gap-0.5 min-h-[50px] relative">
                                                                     {showProfitability ? (
                                                                         <>
                                                                             <div className="font-bold text-xs">{Math.round(dailyRateEquiv)} €/j</div>
