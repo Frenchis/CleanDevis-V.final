@@ -59,14 +59,14 @@ export const importEstimateFromSellsy = async (estimateId: number): Promise<Part
 
             // Parsing Logic
             const activePhases: PhaseItem[] = []; // Fix: Use PhaseItem[]
-            const typologies: TypologyCount = { T1: 0, T2: 0, T3: 0, T4: 0, T5: 0, Autre: 0 };
+            const typologies: TypologyCount = { T1: 0, T2: 0, T3: 0, T4: 0, T5: 0, Autre: 0, PC: 0 };
             let currentPhase: Phase | null = null;
             let totalAmount = 0; // Track total price
 
             // Updated Regex to be more permissive (User data: "Vitrerie T2 :")
             // Use word boundary to avoid matching "T2" inside other words if any.
             // Matches T1, T2, T3... or Autre.
-            const typologyRegex = /\b(T\d+|Autre)\b/i;
+            const typologyRegex = /\b(T\d+|Autre|PC)\b/i;
 
             // Create a reverse mapping for faster lookup: Code -> Phase
             const codeToPhase: Record<string, Phase> = {};

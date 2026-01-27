@@ -98,14 +98,19 @@ export const buildEstimatePayload = async (project: ProjectData, clientId: strin
 
             let hasTypologies = false;
             Object.entries(phaseItem.typologies).forEach(([type, priceValue]) => {
+                // Skip Parties Communes for Vitrerie phase
+                if (type === 'PC' && phaseName === 'Vitrerie') return;
+
                 const price = priceValue as number;
                 const count = project.typologies[type as keyof typeof project.typologies] || 0;
                 if (count > 0) {
                     hasTypologies = true;
+                    // Display "Parties Communes" instead of "PC"
+                    const displayType = type === 'PC' ? 'Parties Communes' : type;
                     lines.push({
                         type: 'single',
                         reference: productCode,
-                        description: `${phaseName} - Typologie ${type}`,
+                        description: `${phaseName} ${displayType}`,
                         quantity: count.toString(),
                         unit_amount: price.toFixed(2), // Price per unit
                         tax_id: taxId

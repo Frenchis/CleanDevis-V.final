@@ -1,326 +1,488 @@
 [
-    {
-        "hash": "f311daa",
-        "date": "2025-12-15T21:50:49+01:00",
-        "author": "Jules Boullier",
-        "message": "Feat: Add Changelog page with git history"
-    },
-    {
-        "hash": "04afaa7",
-        "date": "2025-12-15T21:46:09+01:00",
-        "author": "Jules Boullier",
-        "message": "Fix: Sellsy Template Export Logic"
-    },
-    {
-        "hash": "1586879",
-        "date": "2025-12-15T21:39:45+01:00",
-        "author": "Jules Boullier",
-        "message": "Feat: Integrate Quote Templates in Devis Phases & Reorder Inputs"
-    },
-    {
-        "hash": "cc9a6f9",
-        "date": "2025-12-15T21:29:19+01:00",
-        "author": "Jules Boullier",
-        "message": "Feat: Round prices in Devis grid and add Sellsy Client Reference support"
-    },
-    {
-        "hash": "a78a89b",
-        "date": "2025-12-15T21:19:10+01:00",
-        "author": "Jules Boullier",
-        "message": "Fix: Allow empty strings in numeric inputs to enable field clearing"
-    },
-    {
-        "hash": "d0ba2df",
-        "date": "2025-12-15T00:51:17+01:00",
-        "author": "Jules Boullier",
-        "message": "fix: adjust matrix calculation to be per-phase"
-    },
-    {
-        "hash": "f328df9",
-        "date": "2025-12-15T00:23:10+01:00",
-        "author": "Jules Boullier",
-        "message": "feat: persist matrix config to supabase"
-    },
-    {
-        "hash": "19fd102",
-        "date": "2025-12-15T00:14:06+01:00",
-        "author": "Jules Boullier",
-        "message": "feat: switch matrix config to min/max/step ranges"
-    },
-    {
-        "hash": "e4015df",
-        "date": "2025-12-15T00:06:33+01:00",
-        "author": "Jules Boullier",
-        "message": "feat: refactor matrix UI with sticky header and configurable ranges"
-    },
-    {
-        "hash": "63d10ed",
-        "date": "2025-12-14T23:56:27+01:00",
-        "author": "Jules Boullier",
-        "message": "feat: enhance matrix readability with dual pricing and rich tooltips"
-    },
-    {
-        "hash": "057f957",
-        "date": "2025-12-14T18:57:03+01:00",
-        "author": "Jules Boullier",
-        "message": "style(matrix): move convergence results to left column"
-    },
-    {
-        "hash": "2497e0f",
-        "date": "2025-12-14T18:41:29+01:00",
-        "author": "Jules Boullier",
-        "message": "feat: add Matrix page and reorganize sidebar navigation"
-    },
-    {
-        "hash": "f2841f1",
-        "date": "2025-12-14T18:27:57+01:00",
-        "author": "Jules Boullier",
-        "message": "fix: type errors and add pricing matrix to calculator"
-    },
-    {
-        "hash": "749c8bb",
-        "date": "2025-12-08T23:49:51+01:00",
-        "author": "Jules Boullier",
-        "message": "chore: Add Vercel Analytics"
-    },
-    {
-        "hash": "28cc50f",
-        "date": "2025-12-08T23:49:13+01:00",
-        "author": "Jules Boullier",
-        "message": "feat: Track Sellsy Export status and display in Dashboard"
-    },
-    {
-        "hash": "b6f5c39",
-        "date": "2025-12-08T23:45:11+01:00",
-        "author": "Jules Boullier",
-        "message": "fix: Remove stray markdown syntax causing build failure"
-    },
-    {
-        "hash": "d407de6",
-        "date": "2025-12-08T23:44:01+01:00",
-        "author": "Jules Boullier",
-        "message": "docs: Add Sellsy ID helper image to Guide"
-    },
-    {
-        "hash": "9804075",
-        "date": "2025-12-08T23:41:15+01:00",
-        "author": "Jules Boullier",
-        "message": "fix: Add auto-retry logic to Sellsy Import to handle expired tokens"
-    },
-    {
-        "hash": "89154a9",
-        "date": "2025-12-08T23:34:34+01:00",
-        "author": "Jules Boullier",
-        "message": "docs: Update User Guide content and contact info"
-    },
-    {
-        "hash": "fe3e31f",
-        "date": "2025-12-08T23:29:42+01:00",
-        "author": "Jules Boullier",
-        "message": "feat: Add User Guide page"
-    },
-    {
-        "hash": "5c24e0c",
-        "date": "2025-12-08T23:23:40+01:00",
-        "author": "Jules Boullier",
-        "message": "fix: Update UI target price from imported Sellsy estimate"
-    },
-    {
-        "hash": "7e982a8",
-        "date": "2025-12-08T23:22:04+01:00",
-        "author": "Jules Boullier",
-        "message": "style: Restore action buttons to top-right"
-    },
-    {
-        "hash": "600c0e3",
-        "date": "2025-12-08T23:21:19+01:00",
-        "author": "Jules Boullier",
-        "message": "fix: Support unitAmount camelCase in Sellsy Import"
-    },
-    {
-        "hash": "fd89e32",
-        "date": "2025-12-08T23:19:04+01:00",
-        "author": "Jules Boullier",
-        "message": "fix: Import Modal phase detection for PhaseItem objects"
-    },
-    {
-        "hash": "10ac24b",
-        "date": "2025-12-08T23:18:09+01:00",
-        "author": "Jules Boullier",
-        "message": "style: Remove redundant Phase Selectors from header"
-    },
-    {
-        "hash": "b46a2d7",
-        "date": "2025-12-08T23:16:06+01:00",
-        "author": "Jules Boullier",
-        "message": "feat: Support Multiple Phases & Fix Sellsy Import/Export"
-    },
-    {
-        "hash": "4c71ef0",
-        "date": "2025-12-08T22:58:14+01:00",
-        "author": "Jules Boullier",
-        "message": "fix: Supabase Auth Environment Variables (Vite compat)"
-    },
-    {
-        "hash": "f6a066f",
-        "date": "2025-12-08T22:54:52+01:00",
-        "author": "Jules Boullier",
-        "message": "feat: Sellsy Import with Validation Modal & Update Estimate logic"
-    },
-    {
-        "hash": "a0614a9",
-        "date": "2025-12-05T10:11:59+01:00",
-        "author": "Jules Boullier",
-        "message": "style: improve visibility of phase count badges"
-    },
-    {
-        "hash": "b734448",
-        "date": "2025-12-05T10:09:54+01:00",
-        "author": "Jules Boullier",
-        "message": "fix: correctly initialize active phases from project data"
-    },
-    {
-        "hash": "240d4a2",
-        "date": "2025-12-05T10:04:35+01:00",
-        "author": "Jules Boullier",
-        "message": "feat: allow multiple phases of the same type"
-    },
-    {
-        "hash": "40a594a",
-        "date": "2025-12-05T09:50:14+01:00",
-        "author": "Jules Boullier",
-        "message": "fix: pass surface area to sellsy export payload"
-    },
-    {
-        "hash": "e53dfc2",
-        "date": "2025-12-05T09:39:10+01:00",
-        "author": "Jules Boullier",
-        "message": "feat: update phase description format for surface area"
-    },
-    {
-        "hash": "fa02973",
-        "date": "2025-12-05T09:33:53+01:00",
-        "author": "Jules Boullier",
-        "message": "fix: handle global surface mode in sellsy quote generation"
-    },
-    {
-        "hash": "a95b696",
-        "date": "2025-12-03T16:10:20+01:00",
-        "author": "Jules Boullier",
-        "message": "style: move surface area input below typologies and add separator"
-    },
-    {
-        "hash": "ef571b5",
-        "date": "2025-12-03T16:06:48+01:00",
-        "author": "Jules Boullier",
-        "message": "feat: add surface area support and update sellsy estimate format"
-    },
-    {
-        "hash": "077c3b0",
-        "date": "2025-12-02T19:54:48+01:00",
-        "author": "Jules Boullier",
-        "message": "fix: remove subject line item from estimate creation"
-    },
-    {
-        "hash": "8e10ed9",
-        "date": "2025-12-02T19:47:44+01:00",
-        "author": "Jules Boullier",
-        "message": "chore: add custom SVG favicon"
-    },
-    {
-        "hash": "95dc3f6",
-        "date": "2025-12-02T19:37:45+01:00",
-        "author": "Jules Boullier",
-        "message": "chore: update page title and add favicon link"
-    },
-    {
-        "hash": "778be3c",
-        "date": "2025-12-02T19:20:00+01:00",
-        "author": "Jules Boullier",
-        "message": "fix: correct parsing of search results for clients"
-    },
-    {
-        "hash": "27483c8",
-        "date": "2025-12-02T19:15:28+01:00",
-        "author": "Jules Boullier",
-        "message": "chore: add debug logs to client search"
-    },
-    {
-        "hash": "3268669",
-        "date": "2025-12-02T19:09:43+01:00",
-        "author": "Jules Boullier",
-        "message": "feat: improve client search (partial match) and rename UI labels"
-    },
-    {
-        "hash": "4f8bb28",
-        "date": "2025-12-02T18:02:31+01:00",
-        "author": "Jules Boullier",
-        "message": "fix: move pagination to query params to resolve API 400 error"
-    },
-    {
-        "hash": "dbd5d67",
-        "date": "2025-12-02T17:57:30+01:00",
-        "author": "Jules Boullier",
-        "message": "fix: auto-check API status and improve catalog search with empty filters"
-    },
-    {
-        "hash": "55098b4",
-        "date": "2025-12-02T17:50:21+01:00",
-        "author": "Jules Boullier",
-        "message": "feat: add API status indicator and fix Sellsy catalog search"
-    },
-    {
-        "hash": "7f74dca",
-        "date": "2025-12-02T17:39:29+01:00",
-        "author": "Jules Boullier",
-        "message": "Remove mock data and sync Sellsy catalog"
-    },
-    {
-        "hash": "2d830e9",
-        "date": "2025-12-02T17:29:58+01:00",
-        "author": "Jules Boullier",
-        "message": "Refactor API to use simple proxy"
-    },
-    {
-        "hash": "f4b21cb",
-        "date": "2025-12-02T17:22:29+01:00",
-        "author": "Jules Boullier",
-        "message": "Explicitly route API requests in Vercel"
-    },
-    {
-        "hash": "9f3298b",
-        "date": "2025-12-02T17:17:42+01:00",
-        "author": "Jules Boullier",
-        "message": "Fix Vercel routing and CORS"
-    },
-    {
-        "hash": "8ef11e9",
-        "date": "2025-12-02T16:56:15+01:00",
-        "author": "Jules Boullier",
-        "message": "Handle OPTIONS requests in Vercel proxy"
-    },
-    {
-        "hash": "7058348",
-        "date": "2025-12-02T16:51:17+01:00",
-        "author": "Jules Boullier",
-        "message": "Add Vercel Serverless Function for Sellsy Proxy"
-    },
-    {
-        "hash": "eb7f7b3",
-        "date": "2025-12-02T16:17:12+01:00",
-        "author": "Jules Boullier",
-        "message": "Rename api proxy to sellsy-proxy"
-    },
-    {
-        "hash": "8c673c9",
-        "date": "2025-12-02T15:55:10+01:00",
-        "author": "Jules Boullier",
-        "message": "Add vercel.json for proxy"
-    },
-    {
-        "hash": "ca4077a",
-        "date": "2025-12-02T15:30:37+01:00",
-        "author": "Jules Boullier",
-        "message": "Initial commit"
-    }
+  {
+    "hash": "ac2a097",
+    "date": "2025-12-23T23:00:42+01:00",
+    "author": "Jules Boullier",
+    "message": "fix(matrix): revert daily rate math and fix surface tooltip toggle"
+  },
+  {
+    "hash": "a8c2e8c",
+    "date": "2025-12-23T22:57:14+01:00",
+    "author": "Jules Boullier",
+    "message": "fix(matrix): tooltip toggle and logement profitability mode"
+  },
+  {
+    "hash": "72eeb41",
+    "date": "2025-12-23T22:52:31+01:00",
+    "author": "Jules Boullier",
+    "message": "fix(ui): apply toggle to all tooltips and enable profitability mode on housing matrix"
+  },
+  {
+    "hash": "8c158a3",
+    "date": "2025-12-23T22:49:20+01:00",
+    "author": "Jules Boullier",
+    "message": "feat(ui): implement click-to-toggle tooltips in matrix"
+  },
+  {
+    "hash": "8bcdb41",
+    "date": "2025-12-23T22:45:21+01:00",
+    "author": "Jules Boullier",
+    "message": "feat(ui): add detailed margin breakdown block to matrix tooltips"
+  },
+  {
+    "hash": "4fa9a63",
+    "date": "2025-12-23T22:38:53+01:00",
+    "author": "Jules Boullier",
+    "message": "fix(ui): confirm rename Equiv. Jour to CA/Jour and margin detail"
+  },
+  {
+    "hash": "9ddbb48",
+    "date": "2025-12-23T22:21:40+01:00",
+    "author": "Jules Boullier",
+    "message": "fix(ui): rename 'Marge / Plancher' to 'Marge' in matrix tooltips"
+  },
+  {
+    "hash": "dbad501",
+    "date": "2025-12-23T22:20:11+01:00",
+    "author": "Jules Boullier",
+    "message": "feat(ui): restructure settings page and remove matrix warning icon"
+  },
+  {
+    "hash": "38e16cc",
+    "date": "2025-12-23T22:17:02+01:00",
+    "author": "Jules Boullier",
+    "message": "fix(ui): correct warning icon positioning in matrix cells"
+  },
+  {
+    "hash": "0c6755d",
+    "date": "2025-12-23T22:15:19+01:00",
+    "author": "Jules Boullier",
+    "message": "feat(ui): add margin line to standard matrix tooltips"
+  },
+  {
+    "hash": "68f9e66",
+    "date": "2025-12-23T22:12:14+01:00",
+    "author": "Jules Boullier",
+    "message": "style: implement custom crosshair cursor for matrix and fix build errors"
+  },
+  {
+    "hash": "5af6bad",
+    "date": "2025-12-23T22:08:52+01:00",
+    "author": "Jules Boullier",
+    "message": "fix(ui): clean up matrix styles and restore dual-price tooltips in standard mode"
+  },
+  {
+    "hash": "cf93b5b",
+    "date": "2025-12-23T22:03:49+01:00",
+    "author": "Jules Boullier",
+    "message": "feat: add profitability view, floor rate configuration and UX improvements to Matrix"
+  },
+  {
+    "hash": "61c42c8",
+    "date": "2025-12-23T21:44:24+01:00",
+    "author": "Jules Boullier",
+    "message": "feat: make matrix color thresholds configurable in settings"
+  },
+  {
+    "hash": "ea01292",
+    "date": "2025-12-16T22:30:18+01:00",
+    "author": "Jules Boullier",
+    "message": "feat(matrix): add premium skeleton loader for empty state"
+  },
+  {
+    "hash": "d48cf3e",
+    "date": "2025-12-16T22:23:37+01:00",
+    "author": "Jules Boullier",
+    "message": "fix(admin): pass action in url parameters for robust routing"
+  },
+  {
+    "hash": "c2b15f1",
+    "date": "2025-12-16T22:09:21+01:00",
+    "author": "Jules Boullier",
+    "message": "fix(matrix): resolve build error by removing stray syntax"
+  },
+  {
+    "hash": "ae952fb",
+    "date": "2025-12-16T22:07:41+01:00",
+    "author": "Jules Boullier",
+    "message": "fix(matrix): style update and syntax fix"
+  },
+  {
+    "hash": "d59dff7",
+    "date": "2025-12-16T22:01:51+01:00",
+    "author": "Jules Boullier",
+    "message": "fix: debug admin logout, improve changelog UI and generation"
+  },
+  {
+    "hash": "f1dd9ce",
+    "date": "2025-12-16T21:58:47+01:00",
+    "author": "Jules Boullier",
+    "message": "feat: highlight best matrix cell and rename input to Logements Projet"
+  },
+  {
+    "hash": "847e63b",
+    "date": "2025-12-16T21:52:25+01:00",
+    "author": "Jules Boullier",
+    "message": "fix: resolve matrix component truncated file and lint errors"
+  },
+  {
+    "hash": "86eb649",
+    "date": "2025-12-16T21:50:45+01:00",
+    "author": "Jules Boullier",
+    "message": "feat: update matrix calc to total project cost (no phase division) and detailed tooltips"
+  },
+  {
+    "hash": "fb1a9b4",
+    "date": "2025-12-16T21:41:00+01:00",
+    "author": "Jules Boullier",
+    "message": "feat: refine matrix logic (project surface, multi-phase efficiency) and terminology"
+  },
+  {
+    "hash": "43e58c9",
+    "date": "2025-12-16T21:11:35+01:00",
+    "author": "Jules Boullier",
+    "message": "feat: update Matrix page logic and add Admin force logout"
+  },
+  {
+    "hash": "37852ae",
+    "date": "2025-12-15T22:00:34+01:00",
+    "author": "Jules Boullier",
+    "message": "Fix: Changelog date parsing robustness"
+  },
+  {
+    "hash": "e91a954",
+    "date": "2025-12-15T21:57:05+01:00",
+    "author": "Jules Boullier",
+    "message": "Fix: Convert changelog script to ESM"
+  },
+  {
+    "hash": "5b80959",
+    "date": "2025-12-15T21:55:52+01:00",
+    "author": "Jules Boullier",
+    "message": "Feat: Automate Changelog generation on build"
+  },
+  {
+    "hash": "f311daa",
+    "date": "2025-12-15T21:50:49+01:00",
+    "author": "Jules Boullier",
+    "message": "Feat: Add Changelog page with git history"
+  },
+  {
+    "hash": "04afaa7",
+    "date": "2025-12-15T21:46:09+01:00",
+    "author": "Jules Boullier",
+    "message": "Fix: Sellsy Template Export Logic"
+  },
+  {
+    "hash": "1586879",
+    "date": "2025-12-15T21:39:45+01:00",
+    "author": "Jules Boullier",
+    "message": "Feat: Integrate Quote Templates in Devis Phases & Reorder Inputs"
+  },
+  {
+    "hash": "cc9a6f9",
+    "date": "2025-12-15T21:29:19+01:00",
+    "author": "Jules Boullier",
+    "message": "Feat: Round prices in Devis grid and add Sellsy Client Reference support"
+  },
+  {
+    "hash": "a78a89b",
+    "date": "2025-12-15T21:19:10+01:00",
+    "author": "Jules Boullier",
+    "message": "Fix: Allow empty strings in numeric inputs to enable field clearing"
+  },
+  {
+    "hash": "d0ba2df",
+    "date": "2025-12-15T00:51:17+01:00",
+    "author": "Jules Boullier",
+    "message": "fix: adjust matrix calculation to be per-phase"
+  },
+  {
+    "hash": "f328df9",
+    "date": "2025-12-15T00:23:10+01:00",
+    "author": "Jules Boullier",
+    "message": "feat: persist matrix config to supabase"
+  },
+  {
+    "hash": "19fd102",
+    "date": "2025-12-15T00:14:06+01:00",
+    "author": "Jules Boullier",
+    "message": "feat: switch matrix config to min/max/step ranges"
+  },
+  {
+    "hash": "e4015df",
+    "date": "2025-12-15T00:06:33+01:00",
+    "author": "Jules Boullier",
+    "message": "feat: refactor matrix UI with sticky header and configurable ranges"
+  },
+  {
+    "hash": "63d10ed",
+    "date": "2025-12-14T23:56:27+01:00",
+    "author": "Jules Boullier",
+    "message": "feat: enhance matrix readability with dual pricing and rich tooltips"
+  },
+  {
+    "hash": "057f957",
+    "date": "2025-12-14T18:57:03+01:00",
+    "author": "Jules Boullier",
+    "message": "style(matrix): move convergence results to left column"
+  },
+  {
+    "hash": "2497e0f",
+    "date": "2025-12-14T18:41:29+01:00",
+    "author": "Jules Boullier",
+    "message": "feat: add Matrix page and reorganize sidebar navigation"
+  },
+  {
+    "hash": "f2841f1",
+    "date": "2025-12-14T18:27:57+01:00",
+    "author": "Jules Boullier",
+    "message": "fix: type errors and add pricing matrix to calculator"
+  },
+  {
+    "hash": "749c8bb",
+    "date": "2025-12-08T23:49:51+01:00",
+    "author": "Jules Boullier",
+    "message": "chore: Add Vercel Analytics"
+  },
+  {
+    "hash": "28cc50f",
+    "date": "2025-12-08T23:49:13+01:00",
+    "author": "Jules Boullier",
+    "message": "feat: Track Sellsy Export status and display in Dashboard"
+  },
+  {
+    "hash": "b6f5c39",
+    "date": "2025-12-08T23:45:11+01:00",
+    "author": "Jules Boullier",
+    "message": "fix: Remove stray markdown syntax causing build failure"
+  },
+  {
+    "hash": "d407de6",
+    "date": "2025-12-08T23:44:01+01:00",
+    "author": "Jules Boullier",
+    "message": "docs: Add Sellsy ID helper image to Guide"
+  },
+  {
+    "hash": "9804075",
+    "date": "2025-12-08T23:41:15+01:00",
+    "author": "Jules Boullier",
+    "message": "fix: Add auto-retry logic to Sellsy Import to handle expired tokens"
+  },
+  {
+    "hash": "89154a9",
+    "date": "2025-12-08T23:34:34+01:00",
+    "author": "Jules Boullier",
+    "message": "docs: Update User Guide content and contact info"
+  },
+  {
+    "hash": "fe3e31f",
+    "date": "2025-12-08T23:29:42+01:00",
+    "author": "Jules Boullier",
+    "message": "feat: Add User Guide page"
+  },
+  {
+    "hash": "5c24e0c",
+    "date": "2025-12-08T23:23:40+01:00",
+    "author": "Jules Boullier",
+    "message": "fix: Update UI target price from imported Sellsy estimate"
+  },
+  {
+    "hash": "7e982a8",
+    "date": "2025-12-08T23:22:04+01:00",
+    "author": "Jules Boullier",
+    "message": "style: Restore action buttons to top-right"
+  },
+  {
+    "hash": "600c0e3",
+    "date": "2025-12-08T23:21:19+01:00",
+    "author": "Jules Boullier",
+    "message": "fix: Support unitAmount camelCase in Sellsy Import"
+  },
+  {
+    "hash": "fd89e32",
+    "date": "2025-12-08T23:19:04+01:00",
+    "author": "Jules Boullier",
+    "message": "fix: Import Modal phase detection for PhaseItem objects"
+  },
+  {
+    "hash": "10ac24b",
+    "date": "2025-12-08T23:18:09+01:00",
+    "author": "Jules Boullier",
+    "message": "style: Remove redundant Phase Selectors from header"
+  },
+  {
+    "hash": "b46a2d7",
+    "date": "2025-12-08T23:16:06+01:00",
+    "author": "Jules Boullier",
+    "message": "feat: Support Multiple Phases & Fix Sellsy Import/Export"
+  },
+  {
+    "hash": "4c71ef0",
+    "date": "2025-12-08T22:58:14+01:00",
+    "author": "Jules Boullier",
+    "message": "fix: Supabase Auth Environment Variables (Vite compat)"
+  },
+  {
+    "hash": "f6a066f",
+    "date": "2025-12-08T22:54:52+01:00",
+    "author": "Jules Boullier",
+    "message": "feat: Sellsy Import with Validation Modal & Update Estimate logic"
+  },
+  {
+    "hash": "a0614a9",
+    "date": "2025-12-05T10:11:59+01:00",
+    "author": "Jules Boullier",
+    "message": "style: improve visibility of phase count badges"
+  },
+  {
+    "hash": "b734448",
+    "date": "2025-12-05T10:09:54+01:00",
+    "author": "Jules Boullier",
+    "message": "fix: correctly initialize active phases from project data"
+  },
+  {
+    "hash": "240d4a2",
+    "date": "2025-12-05T10:04:35+01:00",
+    "author": "Jules Boullier",
+    "message": "feat: allow multiple phases of the same type"
+  },
+  {
+    "hash": "40a594a",
+    "date": "2025-12-05T09:50:14+01:00",
+    "author": "Jules Boullier",
+    "message": "fix: pass surface area to sellsy export payload"
+  },
+  {
+    "hash": "e53dfc2",
+    "date": "2025-12-05T09:39:10+01:00",
+    "author": "Jules Boullier",
+    "message": "feat: update phase description format for surface area"
+  },
+  {
+    "hash": "fa02973",
+    "date": "2025-12-05T09:33:53+01:00",
+    "author": "Jules Boullier",
+    "message": "fix: handle global surface mode in sellsy quote generation"
+  },
+  {
+    "hash": "a95b696",
+    "date": "2025-12-03T16:10:20+01:00",
+    "author": "Jules Boullier",
+    "message": "style: move surface area input below typologies and add separator"
+  },
+  {
+    "hash": "ef571b5",
+    "date": "2025-12-03T16:06:48+01:00",
+    "author": "Jules Boullier",
+    "message": "feat: add surface area support and update sellsy estimate format"
+  },
+  {
+    "hash": "077c3b0",
+    "date": "2025-12-02T19:54:48+01:00",
+    "author": "Jules Boullier",
+    "message": "fix: remove subject line item from estimate creation"
+  },
+  {
+    "hash": "8e10ed9",
+    "date": "2025-12-02T19:47:44+01:00",
+    "author": "Jules Boullier",
+    "message": "chore: add custom SVG favicon"
+  },
+  {
+    "hash": "95dc3f6",
+    "date": "2025-12-02T19:37:45+01:00",
+    "author": "Jules Boullier",
+    "message": "chore: update page title and add favicon link"
+  },
+  {
+    "hash": "778be3c",
+    "date": "2025-12-02T19:20:00+01:00",
+    "author": "Jules Boullier",
+    "message": "fix: correct parsing of search results for clients"
+  },
+  {
+    "hash": "27483c8",
+    "date": "2025-12-02T19:15:28+01:00",
+    "author": "Jules Boullier",
+    "message": "chore: add debug logs to client search"
+  },
+  {
+    "hash": "3268669",
+    "date": "2025-12-02T19:09:43+01:00",
+    "author": "Jules Boullier",
+    "message": "feat: improve client search (partial match) and rename UI labels"
+  },
+  {
+    "hash": "4f8bb28",
+    "date": "2025-12-02T18:02:31+01:00",
+    "author": "Jules Boullier",
+    "message": "fix: move pagination to query params to resolve API 400 error"
+  },
+  {
+    "hash": "dbd5d67",
+    "date": "2025-12-02T17:57:30+01:00",
+    "author": "Jules Boullier",
+    "message": "fix: auto-check API status and improve catalog search with empty filters"
+  },
+  {
+    "hash": "55098b4",
+    "date": "2025-12-02T17:50:21+01:00",
+    "author": "Jules Boullier",
+    "message": "feat: add API status indicator and fix Sellsy catalog search"
+  },
+  {
+    "hash": "7f74dca",
+    "date": "2025-12-02T17:39:29+01:00",
+    "author": "Jules Boullier",
+    "message": "Remove mock data and sync Sellsy catalog"
+  },
+  {
+    "hash": "2d830e9",
+    "date": "2025-12-02T17:29:58+01:00",
+    "author": "Jules Boullier",
+    "message": "Refactor API to use simple proxy"
+  },
+  {
+    "hash": "f4b21cb",
+    "date": "2025-12-02T17:22:29+01:00",
+    "author": "Jules Boullier",
+    "message": "Explicitly route API requests in Vercel"
+  },
+  {
+    "hash": "9f3298b",
+    "date": "2025-12-02T17:17:42+01:00",
+    "author": "Jules Boullier",
+    "message": "Fix Vercel routing and CORS"
+  },
+  {
+    "hash": "8ef11e9",
+    "date": "2025-12-02T16:56:15+01:00",
+    "author": "Jules Boullier",
+    "message": "Handle OPTIONS requests in Vercel proxy"
+  },
+  {
+    "hash": "7058348",
+    "date": "2025-12-02T16:51:17+01:00",
+    "author": "Jules Boullier",
+    "message": "Add Vercel Serverless Function for Sellsy Proxy"
+  },
+  {
+    "hash": "eb7f7b3",
+    "date": "2025-12-02T16:17:12+01:00",
+    "author": "Jules Boullier",
+    "message": "Rename api proxy to sellsy-proxy"
+  },
+  {
+    "hash": "8c673c9",
+    "date": "2025-12-02T15:55:10+01:00",
+    "author": "Jules Boullier",
+    "message": "Add vercel.json for proxy"
+  },
+  {
+    "hash": "ca4077a",
+    "date": "2025-12-02T15:30:37+01:00",
+    "author": "Jules Boullier",
+    "message": "Initial commit"
+  }
 ]

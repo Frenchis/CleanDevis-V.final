@@ -13,7 +13,7 @@ import { supabase } from '../lib/supabaseClient';
 import { Download, ArrowLeft, Save, RefreshCw, CheckCircle, AlertTriangle, Building2, Trash2, CloudLightning, Loader2, Search, Plus } from 'lucide-react';
 import { ImportPreviewModal } from '../components/ImportPreviewModal';
 
-const DEFAULT_TYPOLOGIES: TypologyCount = { T1: 0, T2: 0, T3: 0, T4: 0, T5: 0, Autre: 0 };
+const DEFAULT_TYPOLOGIES: TypologyCount = { T1: 0, T2: 0, T3: 0, T4: 0, T5: 0, Autre: 0, PC: 0 };
 const COLORS = ['#4D9805', '#2F3388', '#0ea5e9', '#6366f1'];
 
 import { useToast } from '../components/ui/Toast';
@@ -41,6 +41,7 @@ export const Devis = () => {
   const [clientReference, setClientReference] = useState<string>("");
 
   const [isInitialized, setIsInitialized] = useState(false);
+  const [showPartiesCommunes, setShowPartiesCommunes] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false); // New state for import loading
   const [importSellsyId, setImportSellsyId] = useState<string>(""); // New state for input
@@ -834,7 +835,7 @@ export const Devis = () => {
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            {Object.keys(DEFAULT_TYPOLOGIES).map((key) => (
+            {Object.keys(DEFAULT_TYPOLOGIES).filter(key => key !== 'PC').map((key) => (
               <div key={key} className={`bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border flex flex-col items-center transition-all ${Number(surfaceArea) > 0 ? 'opacity-50 grayscale' : 'border-slate-100 dark:border-slate-700'}`}>
                 <label className="text-[10px] font-bold text-slate-400 uppercase mb-1">{key}</label>
                 <input
@@ -848,6 +849,41 @@ export const Devis = () => {
                 />
               </div>
             ))}
+
+            {/* Parties Communes Toggle */}
+            <div className="col-span-2 mt-2">
+              <div
+                onClick={() => {
+                  if (!showPartiesCommunes) {
+                    setShowPartiesCommunes(true);
+                  } else {
+                    setShowPartiesCommunes(false);
+                    handleTypologyChange('PC' as keyof TypologyCount, 0);
+                  }
+                }}
+                className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${showPartiesCommunes ? 'bg-purple-50 dark:bg-purple-900/20 border-purple-300 dark:border-purple-700' : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 hover:border-purple-300'}`}
+              >
+                <div className="flex items-center gap-2">
+                  <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all ${showPartiesCommunes ? 'bg-purple-500 border-purple-500' : 'border-slate-300 dark:border-slate-600'}`}>
+                    {showPartiesCommunes && <CheckCircle className="w-3 h-3 text-white" />}
+                  </div>
+                  <span className={`text-sm font-bold ${showPartiesCommunes ? 'text-purple-700 dark:text-purple-300' : 'text-slate-500'}`}>Parties Communes</span>
+                </div>
+                {showPartiesCommunes && (
+                  <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="number"
+                      min="0"
+                      value={typologies['PC' as keyof TypologyCount]}
+                      placeholder="0"
+                      onChange={(e) => handleTypologyChange('PC' as keyof TypologyCount, e.target.value === '' ? '' : parseInt(e.target.value))}
+                      className="w-16 bg-white dark:bg-slate-800 border border-purple-300 dark:border-purple-600 rounded-lg px-2 py-1 text-center text-lg font-bold text-purple-700 dark:text-purple-300 outline-none focus:ring-2 focus:ring-purple-500/20"
+                    />
+                    <span className="text-xs text-slate-400">unités</span>
+                  </div>
+                )}
+              </div>
+            </div>
 
             {/* Separator */}
             <div className="col-span-2 flex items-center gap-4 py-2">

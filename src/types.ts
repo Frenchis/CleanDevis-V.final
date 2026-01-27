@@ -13,6 +13,7 @@ export interface TypologyCount {
   T4: number;
   T5: number;
   Autre: number;
+  PC: number;
 }
 
 export interface TypologyPerformance {
@@ -22,6 +23,7 @@ export interface TypologyPerformance {
   T4: number;
   T5: number;
   Autre: number;
+  PC: number;
 }
 
 

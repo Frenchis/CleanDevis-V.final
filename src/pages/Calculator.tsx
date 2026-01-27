@@ -51,7 +51,7 @@ export const Calculator = () => {
 
   // Typologies can technically hold '' during editing, so we cast to any or define a draft type
   const [typologies, setTypologies] = useState<any>({
-    T1: 0, T2: 5, T3: 5, T4: 5, T5: 0, Autre: 0
+    T1: 0, T2: 5, T3: 5, T4: 5, T5: 0, Autre: 0, PC: 0
   });
 
   const [complexity, setComplexity] = useState<ComplexityParams>({

@@ -8,11 +8,11 @@ const YIELD_HIGH = 420; // M4
 const MARKET_RATE = { 1: 4.0, 2: 5.5, 3: 7.5, 4: 9.0 }; // M2 per phase
 
 const RATES: TypologyPerformance = {
-  T1: 8, T2: 7, T3: 6, T4: 5, T5: 4, Autre: 5
+  T1: 8, T2: 7, T3: 6, T4: 5, T5: 4, Autre: 5, PC: 3
 };
 
 const THEO_SURFACE: Record<string, number> = {
-  T1: 28, T2: 45, T3: 65, T4: 85, T5: 105, Autre: 50
+  T1: 28, T2: 45, T3: 65, T4: 85, T5: 105, Autre: 50, PC: 100
 };
 
 const PHASE_COEFFS: Record<number, number> = {
